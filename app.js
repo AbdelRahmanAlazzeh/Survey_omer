@@ -94,7 +94,7 @@ const I18N = {
     inst1Title: "Pairwise Comparison",
     inst1Desc: "Two images will be displayed side-by-side. Choose the one you prefer.",
     inst2Title: "King of the Hill",
-    inst2Desc: "The chosen image stays to battle the next challenger until all 35 images are evaluated.",
+    inst2Desc: "The chosen image stays to battle the next challenger until all category images are evaluated.",
     inst3Title: "Final 4 Champions",
     inst3Desc: "At the end, exactly 1 champion per category will be crowned (4 final winners).",
     lblPartId: "Participant ID / Name:",
@@ -643,13 +643,19 @@ function updateStatusBar() {
   );
 
   // Rounds
-  const totalRoundsInCat = cat.totalImages - 1; // 34
+  const totalRoundsInCat = cat.totalImages - 1;
   document.getElementById('round-number-text').textContent = state.currentRoundNumber;
   document.getElementById('total-rounds-text').textContent = totalRoundsInCat;
 
-  // Total Progress Percentage
-  const totalSurveyComparisons = SURVEY_CONFIG.categories.length * totalRoundsInCat; // 136
-  const currentTotalProgress = (state.currentCategoryIndex * totalRoundsInCat) + (state.currentRoundNumber - 1);
+  // Dynamic Total Progress Percentage across all categories
+  const totalSurveyComparisons = SURVEY_CONFIG.categories.reduce((acc, c) => acc + (c.totalImages - 1), 0);
+  
+  let currentTotalProgress = 0;
+  for (let i = 0; i < state.currentCategoryIndex; i++) {
+    currentTotalProgress += (SURVEY_CONFIG.categories[i].totalImages - 1);
+  }
+  currentTotalProgress += (state.currentRoundNumber - 1);
+
   const percentage = Math.min(100, Math.round((currentTotalProgress / totalSurveyComparisons) * 100));
 
   document.getElementById('progress-fill').style.width = `${percentage}%`;
