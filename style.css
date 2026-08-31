@@ -1,13 +1,13 @@
 /* ==========================================================================
-   VISUAL PREFERENCE SURVEY - HIGH-AESTHETIC RESPONSIVE STYLESHEET
-   100% Zero-Overflow, Universal Picture Framing & Safe Responsive Design
+   VISUAL PREFERENCE SURVEY - COMPLETE PRODUCTION STYLESHEET
+   Features: Universal Framing, Gallery Explorer, Session Persistence & Zero-Overflow
    ========================================================================== */
 
 :root {
   --font-arabic: 'Cairo', system-ui, -apple-system, sans-serif;
   --font-latin: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   
-  /* Primary Theme Palette (Dark Premium) */
+  /* Dark Premium Palette */
   --bg-primary: #090d16;
   --bg-secondary: #0f172a;
   --bg-tertiary: #1e293b;
@@ -303,9 +303,7 @@ body[dir="ltr"] {
   to { opacity: 1; transform: scale(1); }
 }
 
-/* ==========================================================================
-   WELCOME SCREEN & SLEEK PRESENTATION
-   ========================================================================== */
+/* Welcome Card */
 .welcome-card {
   background: var(--bg-card);
   backdrop-filter: blur(12px);
@@ -422,7 +420,7 @@ body[dir="ltr"] {
   margin: 0 auto;
 }
 
-/* Informational steps timeline - Sleek, non-clickable, clean */
+/* Steps Timeline */
 .survey-steps-overview {
   display: flex;
   align-items: center;
@@ -556,18 +554,50 @@ body[dir="ltr"] .step-arrow {
 }
 
 /* ==========================================================================
-   ARENA / BATTLE SCREEN (UNIVERSAL DYNAMIC FRAMING PER SET)
+   ARENA SCREEN & GALLERY EXPLORER BUTTON
    ========================================================================== */
 .arena-header {
   text-align: center;
   margin-bottom: clamp(0.6rem, 1.5vh, 1rem);
 }
 
+.arena-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.25rem;
+}
+
 .arena-title {
   font-size: clamp(1.1rem, 2.6vw, 1.4rem);
   font-weight: 800;
   color: var(--text-primary);
-  margin-bottom: 0.2rem;
+}
+
+.btn-explore-gallery {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-explore-gallery:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+  transform: translateY(-1px);
 }
 
 .arena-hint {
@@ -636,7 +666,6 @@ body[dir="ltr"] .step-arrow {
   box-shadow: 0 0 25px rgba(16, 185, 129, 0.4);
 }
 
-/* Subtle, clear option badges */
 .card-badge {
   position: absolute;
   top: 10px;
@@ -676,10 +705,7 @@ body[dir="ltr"] .card-badge {
   background: #6366f1;
 }
 
-/* ==========================================================================
-   DYNAMIC IMAGE WRAPPER & BORDER SAFETY
-   Universal framing tailored to category aspect ratio (landscape or portrait)
-   ========================================================================== */
+/* Image Wrapper & Framing */
 .card-image-wrapper {
   position: relative;
   width: 100%;
@@ -692,19 +718,16 @@ body[dir="ltr"] .card-badge {
   transition: height var(--transition-smooth), aspect-ratio var(--transition-smooth);
 }
 
-/* Category Set 1 & 2: Landscape sets (Arab Female & Male: 3:2 ratio) */
 .arena-landscape .card-image-wrapper {
   aspect-ratio: 3 / 2;
   max-height: min(48vh, 420px);
 }
 
-/* Category Set 3 & 4: Portrait sets (Chinese Male & Female: ~4:5 ratio) */
 .arena-portrait .card-image-wrapper {
   aspect-ratio: 4 / 5;
   max-height: min(54vh, 480px);
 }
 
-/* Image inside container: NEVER lose borders or crop faces */
 .card-image {
   width: 100%;
   height: 100%;
@@ -718,7 +741,6 @@ body[dir="ltr"] .card-badge {
   transform: scale(1.02);
 }
 
-/* Zoom Preview Button */
 .zoom-btn {
   position: absolute;
   bottom: 8px;
@@ -749,7 +771,6 @@ body[dir="ltr"] .zoom-btn {
   transform: scale(1.1);
 }
 
-/* Clean Card Footer */
 .card-footer {
   padding: 0.6rem 0.9rem;
   display: flex;
@@ -801,7 +822,6 @@ body[dir="ltr"] .zoom-btn {
   color: #fff;
 }
 
-/* Shortcuts Footer Bar */
 .shortcuts-bar {
   display: flex;
   align-items: center;
@@ -819,64 +839,223 @@ body[dir="ltr"] .zoom-btn {
   gap: 0.35rem;
 }
 
-/* Category Transition Modal */
-.interstitial-modal {
+/* ==========================================================================
+   CATEGORY GALLERY MODAL
+   ========================================================================== */
+.gallery-modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.82);
-  backdrop-filter: blur(8px);
-  z-index: 100;
-  display: flex;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(10px);
+  z-index: 110;
+  display: none;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.25s ease;
+  padding: clamp(0.75rem, 2vw, 1.5rem);
 }
 
-.interstitial-modal.active {
-  opacity: 1;
-  pointer-events: auto;
+.gallery-modal.active {
+  display: flex;
 }
 
-.interstitial-box {
+.gallery-content {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  padding: clamp(1.5rem, 4vw, 2.25rem);
-  max-width: 440px;
   width: 100%;
-  text-align: center;
+  max-width: 1050px;
+  max-height: 88vh;
+  max-height: 88dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   box-shadow: var(--shadow-lg);
-  transform: scale(0.95);
-  transition: transform 0.25s ease;
+  animation: fadeIn 0.2s ease;
 }
 
-.interstitial-modal.active .interstitial-box {
-  transform: scale(1);
+.gallery-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--bg-card);
 }
 
-.interstitial-icon {
-  font-size: 2.2rem;
-  margin-bottom: 0.6rem;
-}
-
-.interstitial-title {
-  font-size: clamp(1.15rem, 3vw, 1.4rem);
+.gallery-title {
+  font-size: clamp(1.05rem, 2.5vw, 1.3rem);
   font-weight: 800;
-  margin-bottom: 0.4rem;
+  color: var(--text-primary);
 }
 
-.interstitial-desc {
+.gallery-subtitle {
+  font-size: 0.8rem;
   color: var(--text-secondary);
-  font-size: 0.9rem;
-  margin-bottom: 1.25rem;
-  line-height: 1.5;
+  margin-top: 0.15rem;
+}
+
+.btn-gallery-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.6rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  line-height: 1;
+}
+
+.btn-gallery-close:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.gallery-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 1rem;
+}
+
+.gallery-item-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all var(--transition-fast);
+}
+
+.gallery-item-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.gallery-item-card.current-champion {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.35);
+}
+
+.gallery-thumb-wrap {
+  position: relative;
+  width: 100%;
+  background: var(--bg-image-holder);
+  overflow: hidden;
+}
+
+.gallery-item-card.item-landscape .gallery-thumb-wrap {
+  aspect-ratio: 3 / 2;
+  height: 120px;
+}
+
+.gallery-item-card.item-portrait .gallery-thumb-wrap {
+  aspect-ratio: 4 / 5;
+  height: 150px;
+}
+
+.gallery-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.gallery-num-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+body[dir="ltr"] .gallery-num-badge {
+  left: auto;
+  right: 6px;
+}
+
+.gallery-champ-badge {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  background: var(--accent-gold);
+  color: #000;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-full);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+body[dir="ltr"] .gallery-champ-badge {
+  right: auto;
+  left: 6px;
+}
+
+.gallery-zoom-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  color: #fff;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+body[dir="ltr"] .gallery-zoom-btn {
+  right: auto;
+  left: 6px;
+}
+
+.gallery-card-actions {
+  padding: 0.5rem;
+  background: var(--bg-secondary);
+}
+
+.btn-elect-image {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 0.76rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-elect-image:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.btn-elect-image.btn-is-champ {
+  background: var(--accent-gold-light);
+  color: var(--accent-gold);
+  border-color: rgba(245, 158, 11, 0.4);
+  cursor: default;
 }
 
 /* ==========================================================================
-   RESULTS SCREEN
+   RESULTS SCREEN & PARTICIPANT SUMMARY
    ========================================================================== */
 .results-header {
   text-align: center;
@@ -900,6 +1079,18 @@ body[dir="ltr"] .zoom-btn {
 .results-subtitle {
   color: var(--text-secondary);
   font-size: clamp(0.86rem, 2vw, 0.96rem);
+}
+
+.participant-summary-tag {
+  display: inline-block;
+  margin-top: 0.6rem;
+  padding: 0.3rem 0.85rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 .winners-grid {
@@ -980,7 +1171,7 @@ body[dir="ltr"] .zoom-btn {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   padding: clamp(1.25rem, 3vw, 1.75rem);
-  max-width: 600px;
+  max-width: 680px;
   margin: 0 auto;
   text-align: center;
   box-shadow: var(--shadow-lg);
@@ -1047,7 +1238,62 @@ body[dir="ltr"] .zoom-btn {
   border-color: var(--primary);
 }
 
-/* Lightbox Modal */
+/* Modals */
+.interstitial-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.interstitial-modal.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.interstitial-box {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: clamp(1.5rem, 4vw, 2.25rem);
+  max-width: 440px;
+  width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  transform: scale(0.95);
+  transition: transform 0.25s ease;
+}
+
+.interstitial-modal.active .interstitial-box {
+  transform: scale(1);
+}
+
+.interstitial-icon {
+  font-size: 2.2rem;
+  margin-bottom: 0.6rem;
+}
+
+.interstitial-title {
+  font-size: clamp(1.15rem, 3vw, 1.4rem);
+  font-weight: 800;
+  margin-bottom: 0.4rem;
+}
+
+.interstitial-desc {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+
 .lightbox-modal {
   position: fixed;
   inset: 0;
@@ -1162,5 +1408,11 @@ body[dir="ltr"] .zoom-btn {
   
   .resume-banner-actions {
     justify-content: flex-end;
+  }
+
+  .gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 0.65rem;
+    padding: 0.75rem;
   }
 }

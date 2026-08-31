@@ -1,12 +1,13 @@
 /**
  * VISUAL PREFERENCE SURVEY - CORE APPLICATION ENGINE
  * Features:
- * - Tournament King of the Hill Pairwise Elimination
+ * - King of the Hill Pairwise Elimination with Full Section Gallery Explorer
+ * - Direct Champion Election from Full Set Gallery
  * - 4 Face Categories with Dynamic Universal Aspect-Ratio Framing
  * - Resilient Session Recovery on Page Reload / Accidental Refresh
- * - Google Sheets Realtime Webhook Integration
- * - Professional Academic Copywriting & Multi-Language Localization
- * - Accessible Keyboard Shortcuts & Full-Resolution Lightbox Zoom
+ * - Same-User Re-take Survey Support with Deduplicated Data Versioning
+ * - Mandatory Full Name & Age Validation
+ * - Google Sheets Realtime Webhook Integration & CSV/JSON Export
  */
 
 // Application State
@@ -22,6 +23,7 @@ const state = {
     name: '',
     gender: '',
     age: '',
+    attempt: 1,
     startTime: null,
     endTime: null
   },
@@ -54,10 +56,11 @@ const I18N = {
     inst2Desc: "اختر الصورة المفضلة بنظرك للمتابعة",
     inst3Title: "النتيجة النهائية",
     inst3Desc: "تحديد الخيار الفائز لكل مجموعة بدقة",
-    lblPartId: "اسم المشارك / اللقب (اختياري):",
-    placeholderPartId: "أدخل اسمك أو لقبك، أو اتركه فارغاً للبدء مباشرة...",
+    lblPartId: "الاسم الكامل (مطلوب) * :",
+    placeholderPartId: "أدخل اسمك الكامل...",
     lblGender: "الجنس (اختياري):",
-    lblAge: "الفئة العمرية (اختياري):",
+    lblAge: "العمر (مطلوب) * :",
+    placeholderAge: "مثال: 25",
     optSelect: "-- اختر --",
     optMale: "ذكر",
     optFemale: "أنثى",
@@ -71,6 +74,11 @@ const I18N = {
     lblChampion: "الخيار (1)",
     lblChallenger: "الخيار (2)",
     lblSelect: "اختيار هذا",
+    lblExploreGallery: "معرض جميع الصور",
+    galleryTitle: "معرض كافة صور المجموعة",
+    gallerySubtitle: "يمكنك استعراض كل الصور دفعة واحدة واختيار أي صورة مباشرة كخيار مفضل لك.",
+    btnElectImage: "انتخاب كصورة مفضلة",
+    lblCurrentChamp: "👑 الخيار الحالي",
     chooseLeft: ": اختيار اليسار",
     chooseRight: ": اختيار اليمين",
     closeZoom: ": إغلاق المعاينة",
@@ -83,14 +91,17 @@ const I18N = {
     statusSending: "جاري حفظ وإرسال البيانات إلى السيرفر...",
     statusSuccess: "✓ تم تسجيل نتائجك وحفظها بنجاح!",
     statusLocalOnly: "ℹ️ تم حفظ النتائج محلياً. يمكنك تحميل تقرير بالنتائج أدناه.",
+    btnRetake: "إعادة الاستبيان لنفس المشارك",
+    btnNewEval: "مشارك جديد",
     btnCsv: "تحميل تقرير (CSV)",
     btnJson: "تحميل البيانات (JSON)",
-    btnNewEval: "مشارك جديد",
     imgTitle: (num) => `صورة #${num}`,
     resumeTitle: "لديك استبيان قيد التقدم",
     resumeDesc: (cat, round) => `يمكنك استئناف جلسة التقييم السابقة من (المجموعة ${cat}، الجولة ${round}) أو البدء من جديد.`,
     btnResume: "استئناف المتابعة",
-    btnDiscard: "بدء جديد"
+    btnDiscard: "بدء جديد",
+    attemptLabel: (num) => `المحاولة رقم: ${num}`,
+    participantSummary: (name, age, attempt) => `المشارك: ${name} | العمر: ${age} سنة ${attempt > 1 ? `| المحاولة (${attempt})` : ''}`
   },
   en: {
     appTitle: "Visual Preference Survey",
@@ -103,10 +114,11 @@ const I18N = {
     inst2Desc: "Select the image you prefer to advance",
     inst3Title: "Final Champions",
     inst3Desc: "Identify the top selected choice per category",
-    lblPartId: "Participant Name (Optional):",
-    placeholderPartId: "Enter your name, or leave blank to continue...",
+    lblPartId: "Full Name (Required) * :",
+    placeholderPartId: "Enter your full name...",
     lblGender: "Gender (Optional):",
-    lblAge: "Age Group (Optional):",
+    lblAge: "Age (Required) * :",
+    placeholderAge: "e.g. 25",
     optSelect: "-- Select --",
     optMale: "Male",
     optFemale: "Female",
@@ -120,6 +132,11 @@ const I18N = {
     lblChampion: "Option 1",
     lblChallenger: "Option 2",
     lblSelect: "Select This",
+    lblExploreGallery: "Explore All Images",
+    galleryTitle: "Full Set Image Gallery",
+    gallerySubtitle: "Explore all images in this set at once or directly elect any image as your preferred option.",
+    btnElectImage: "Elect as Preferred",
+    lblCurrentChamp: "👑 Current Option",
     chooseLeft: ": Select Left",
     chooseRight: ": Select Right",
     closeZoom: ": Close Preview",
@@ -132,14 +149,17 @@ const I18N = {
     statusSending: "Submitting responses...",
     statusSuccess: "✓ Your responses were recorded and submitted successfully!",
     statusLocalOnly: "ℹ️ Responses saved locally. You can download the report below.",
+    btnRetake: "Retake Survey (Same Participant)",
+    btnNewEval: "New Participant",
     btnCsv: "Download CSV Report",
     btnJson: "Download JSON Data",
-    btnNewEval: "New Participant",
     imgTitle: (num) => `Image #${num}`,
     resumeTitle: "Survey in Progress",
     resumeDesc: (cat, round) => `You can resume your previous session from (Set ${cat}, Round ${round}) or start fresh.`,
     btnResume: "Resume Session",
-    btnDiscard: "Start Fresh"
+    btnDiscard: "Start Fresh",
+    attemptLabel: (num) => `Attempt #${num}`,
+    participantSummary: (name, age, attempt) => `Participant: ${name} | Age: ${age} ${attempt > 1 ? `| Attempt #${attempt}` : ''}`
   }
 };
 
@@ -154,23 +174,21 @@ document.addEventListener('DOMContentLoaded', () => {
  * Event Listeners & Keyboard Bindings
  */
 function initEventListeners() {
-  // Theme toggle
   const btnTheme = document.getElementById('btn-toggle-theme');
   if (btnTheme) btnTheme.addEventListener('click', toggleTheme);
   
-  // Language toggle
   const btnLang = document.getElementById('btn-toggle-lang');
   if (btnLang) btnLang.addEventListener('click', toggleLanguage);
 
-  // Keyboard Shortcuts (Arrow keys & 1/2)
   window.addEventListener('keydown', handleKeyNavigation);
 
-  // Close zoom with ESC
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeZoom();
+    if (e.key === 'Escape') {
+      closeZoom();
+      closeCategoryGallery();
+    }
   });
 
-  // Warn before accidental tab closure during active survey
   window.addEventListener('beforeunload', (e) => {
     if (state.isSurveyActive && !state.isSurveyCompleted) {
       e.preventDefault();
@@ -184,9 +202,10 @@ function initEventListeners() {
  */
 function handleKeyNavigation(e) {
   const arenaScreen = document.getElementById('screen-arena');
+  const galleryModal = document.getElementById('gallery-modal');
   if (!arenaScreen || !arenaScreen.classList.contains('active') || state.isProcessingDecision) return;
+  if (galleryModal && galleryModal.classList.contains('active')) return;
 
-  // Don't capture inputs if typing inside an input box
   if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
 
   if (e.key === 'ArrowLeft' || e.key === '1' || e.key === 'a' || e.key === 'A') {
@@ -199,16 +218,36 @@ function handleKeyNavigation(e) {
 }
 
 /**
- * Start Survey with clean user credentials
+ * Start Survey with mandatory Full Name & Age validation
  */
 function startSurvey() {
-  const rawName = (document.getElementById('participant-id').value || '').trim();
-  const fallbackId = 'P-' + Math.floor(1000 + Math.random() * 9000);
+  const nameInput = document.getElementById('participant-id');
+  const ageInput = document.getElementById('participant-age');
+  const genderInput = document.getElementById('participant-gender');
 
-  state.participant.name = rawName || '';
-  state.participant.id = rawName ? rawName : fallbackId;
-  state.participant.gender = document.getElementById('participant-gender').value;
-  state.participant.age = document.getElementById('participant-age').value;
+  const fullName = (nameInput.value || '').trim();
+  const ageVal = parseInt(ageInput.value, 10);
+
+  if (!fullName || fullName.length < 2) {
+    nameInput.focus();
+    alert(state.language === 'ar' ? 'يرجى إدخال الاسم الكامل للمتابعة.' : 'Please enter your full name to proceed.');
+    return;
+  }
+
+  if (isNaN(ageVal) || ageVal < 10 || ageVal > 115) {
+    ageInput.focus();
+    alert(state.language === 'ar' ? 'يرجى إدخال العمر بشكل صحيح بالأرقام.' : 'Please enter a valid age.');
+    return;
+  }
+
+  // Create clean participant identifier
+  const cleanId = fullName.toLowerCase().replace(/[^a-z0-9\u0600-\u06FF]/gi, '_') + '_' + ageVal;
+
+  state.participant.name = fullName;
+  state.participant.id = cleanId;
+  state.participant.age = ageVal;
+  state.participant.gender = genderInput ? genderInput.value : '';
+  state.participant.attempt = state.participant.attempt || 1;
   state.participant.startTime = new Date().toISOString();
 
   state.currentCategoryIndex = 0;
@@ -216,6 +255,28 @@ function startSurvey() {
   state.history = [];
   state.isSurveyActive = true;
   state.isSurveyCompleted = false;
+
+  showScreen('screen-arena');
+  document.getElementById('survey-status-bar').classList.add('active');
+
+  startCategory(0);
+}
+
+/**
+ * Retake Survey for the Same Participant (handles multiple attempts without redundant duplication)
+ */
+function retakeSurveyForSameParticipant() {
+  state.participant.attempt = (state.participant.attempt || 1) + 1;
+  state.participant.startTime = new Date().toISOString();
+  state.participant.endTime = null;
+
+  state.currentCategoryIndex = 0;
+  state.winners = [];
+  state.history = [];
+  state.isSurveyActive = true;
+  state.isSurveyCompleted = false;
+
+  clearActiveSession();
 
   showScreen('screen-arena');
   document.getElementById('survey-status-bar').classList.add('active');
@@ -297,7 +358,7 @@ function resumeSavedSession() {
     state.currentChampionNumber = s.currentChampionNumber || 1;
     state.currentChallengerNumber = s.currentChallengerNumber || 2;
     state.currentRoundNumber = s.currentRoundNumber || 1;
-    state.participant = s.participant || { id: 'P-1000', name: '' };
+    state.participant = s.participant || { id: 'user', name: '', attempt: 1 };
     state.winners = s.winners || [];
     state.history = s.history || [];
     state.isSurveyActive = true;
@@ -372,7 +433,6 @@ function loadCurrentRound() {
   state.lastRoundStartTime = performance.now();
 
   const category = SURVEY_CONFIG.categories[state.currentCategoryIndex];
-  const lang = state.language;
 
   // Update Status Bar
   updateStatusBar();
@@ -472,6 +532,8 @@ function selectWinner(choice) {
   state.history.push({
     participantId: state.participant.id,
     participantName: state.participant.name,
+    participantAge: state.participant.age,
+    attemptNumber: state.participant.attempt || 1,
     categoryId: category.id,
     categoryTitle: category.titleEn,
     roundNumber: state.currentRoundNumber,
@@ -479,6 +541,7 @@ function selectWinner(choice) {
     rightImage: challengerNumber,
     winnerChosen: chosenNumber,
     eliminatedImage: eliminatedNumber,
+    selectionMethod: 'pairwise_choice',
     reactionTimeMs: reactionTime,
     timestamp: new Date().toISOString()
   });
@@ -492,12 +555,11 @@ function selectWinner(choice) {
   setTimeout(() => {
     if (chosenCard) chosenCard.classList.remove('card-selected');
 
-    // King of the Hill Update:
+    // King of the Hill Update
     state.currentChampionNumber = chosenNumber;
 
     // Check if category complete
     if (state.currentRoundNumber >= category.totalImages - 1) {
-      // Record category champion
       state.winners.push({
         categoryId: category.id,
         categoryTitleAr: category.titleAr,
@@ -510,7 +572,6 @@ function selectWinner(choice) {
       saveActiveSession();
       handleCategoryCompletion();
     } else {
-      // Advance to next challenger
       state.currentRoundNumber += 1;
       state.currentChallengerNumber += 1;
       saveActiveSession();
@@ -520,13 +581,95 @@ function selectWinner(choice) {
 }
 
 /**
+ * ==========================================================================
+ * FULL CATEGORY GALLERY EXPLORER & DIRECT ELECTION FEATURE
+ * ==========================================================================
+ */
+function openCategoryGallery() {
+  const modal = document.getElementById('gallery-modal');
+  const grid = document.getElementById('gallery-grid');
+  const category = SURVEY_CONFIG.categories[state.currentCategoryIndex];
+  const lang = state.language;
+  const t = I18N[lang];
+
+  document.getElementById('gallery-title').textContent = `${t.galleryTitle} (${lang === 'ar' ? category.titleAr : category.titleEn})`;
+  document.getElementById('gallery-subtitle').textContent = t.gallerySubtitle;
+
+  grid.innerHTML = '';
+
+  const isLandscape = category.aspectRatioType === 'landscape';
+
+  for (let i = 1; i <= category.totalImages; i++) {
+    const isCurrentChamp = (i === state.currentChampionNumber);
+    const card = document.createElement('div');
+    card.className = `gallery-item-card ${isCurrentChamp ? 'current-champion' : ''} ${isLandscape ? 'item-landscape' : 'item-portrait'}`;
+
+    card.innerHTML = `
+      <div class="gallery-thumb-wrap">
+        <img id="gallery-img-${i}" class="gallery-thumb" src="" alt="${category.id} #${i}" loading="lazy">
+        <span class="gallery-num-badge">#${i}</span>
+        ${isCurrentChamp ? `<span class="gallery-champ-badge">${t.lblCurrentChamp}</span>` : ''}
+        <button type="button" class="gallery-zoom-btn" onclick="event.stopPropagation(); zoomImage('gallery-img-${i}')" title="Zoom">🔍</button>
+      </div>
+      <div class="gallery-card-actions">
+        <button type="button" class="btn-elect-image ${isCurrentChamp ? 'btn-is-champ' : ''}" onclick="electGalleryImage(${i})">
+          ${isCurrentChamp ? t.lblCurrentChamp : t.btnElectImage}
+        </button>
+      </div>
+    `;
+
+    grid.appendChild(card);
+
+    const imgEl = document.getElementById(`gallery-img-${i}`);
+    setImageSource(imgEl, category, i);
+  }
+
+  modal.classList.add('active');
+}
+
+function closeCategoryGallery() {
+  const modal = document.getElementById('gallery-modal');
+  if (modal) modal.classList.remove('active');
+}
+
+/**
+ * Directly Elect an image from the full gallery as the current category champion
+ */
+function electGalleryImage(imageNumber) {
+  const category = SURVEY_CONFIG.categories[state.currentCategoryIndex];
+
+  state.currentChampionNumber = imageNumber;
+
+  // Log direct election in history
+  state.history.push({
+    participantId: state.participant.id,
+    participantName: state.participant.name,
+    participantAge: state.participant.age,
+    attemptNumber: state.participant.attempt || 1,
+    categoryId: category.id,
+    categoryTitle: category.titleEn,
+    roundNumber: state.currentRoundNumber,
+    leftImage: imageNumber,
+    rightImage: state.currentChallengerNumber,
+    winnerChosen: imageNumber,
+    eliminatedImage: 'N/A',
+    selectionMethod: 'direct_gallery_election',
+    reactionTimeMs: 0,
+    timestamp: new Date().toISOString()
+  });
+
+  closeCategoryGallery();
+  saveActiveSession();
+  loadCurrentRound();
+}
+
+/**
  * Handle transition when a category completes
  */
 function handleCategoryCompletion() {
   const currentCat = SURVEY_CONFIG.categories[state.currentCategoryIndex];
   const lang = state.language;
 
-  // Check if all categories completed
   if (state.currentCategoryIndex >= SURVEY_CONFIG.categories.length - 1) {
     finishSurvey();
   } else {
@@ -560,16 +703,25 @@ function finishSurvey() {
   
   clearActiveSession();
 
-  // Hide status bar
   document.getElementById('survey-status-bar').classList.remove('active');
   
   // Show Results Screen
   showScreen('screen-results');
 
+  // Render Participant Summary
+  const pTag = document.getElementById('participant-summary-tag');
+  if (pTag) {
+    pTag.textContent = I18N[state.language].participantSummary(
+      state.participant.name,
+      state.participant.age,
+      state.participant.attempt || 1
+    );
+  }
+
   // Render 4 Winners
   renderWinnersGrid();
 
-  // Submit Data to Google Sheets Webhook
+  // Submit Data to Google Sheets Webhook and Local Storage without redundancy
   submitSurveyData();
 }
 
@@ -607,25 +759,27 @@ function renderWinnersGrid() {
 
     grid.appendChild(card);
 
-    // Set image source
     const imgEl = document.getElementById(`winner-img-${idx}`);
     setImageSource(imgEl, winner, winner.winnerImageNumber);
   });
 }
 
 /**
- * Submit survey data to Google Sheets / Webhook
+ * Submit survey data to Google Sheets / Webhook & Deduplicate in Local Storage
  */
 async function submitSurveyData() {
   const statusBox = document.getElementById('submission-status');
   const statusText = document.getElementById('status-text');
   const lang = state.language;
 
+  const currentAttempt = state.participant.attempt || 1;
+
   const payload = {
     participantId: state.participant.id,
-    participantName: state.participant.name || 'Anonymous',
+    participantName: state.participant.name,
+    participantAge: state.participant.age,
     gender: state.participant.gender || 'N/A',
-    age: state.participant.age || 'N/A',
+    attemptNumber: currentAttempt,
     startTime: state.participant.startTime,
     endTime: state.participant.endTime,
     winners: state.winners.map(w => ({
@@ -640,13 +794,24 @@ async function submitSurveyData() {
     detailedHistory: state.history
   };
 
-  // Local storage backup list
+  // Structured, non-redundant Local Storage handling
   try {
-    const existing = JSON.parse(localStorage.getItem('SURVEY_RESPONSES') || '[]');
-    existing.push(payload);
-    localStorage.setItem('SURVEY_RESPONSES', JSON.stringify(existing));
+    const existingList = JSON.parse(localStorage.getItem('SURVEY_RESPONSES') || '[]');
+    
+    // Check if record exists for same participant & attempt
+    const index = existingList.findIndex(
+      r => r.participantId === state.participant.id && r.attemptNumber === currentAttempt
+    );
+
+    if (index >= 0) {
+      existingList[index] = payload; // Update existing attempt
+    } else {
+      existingList.push(payload); // Add new attempt
+    }
+
+    localStorage.setItem('SURVEY_RESPONSES', JSON.stringify(existingList));
   } catch (e) {
-    console.warn('LocalStorage save warning:', e);
+    console.warn('LocalStorage save error:', e);
   }
 
   const webhookUrl = SURVEY_CONFIG.googleSheetWebhookUrl;
@@ -686,14 +851,15 @@ function exportDataAsCSV() {
   const p = state.participant;
   const w = state.winners;
 
-  let csvContent = "\uFEFF"; // UTF-8 BOM
-  csvContent += "Participant ID,Participant Name,Gender,Age,Start Time,End Time,Arab Female Winner,Arab Male Winner,Chinese Male Winner,Chinese Female Winner\n";
+  let csvContent = "\uFEFF";
+  csvContent += "Participant ID,Full Name,Age,Gender,Attempt #,Start Time,End Time,Arab Female Winner,Arab Male Winner,Chinese Male Winner,Chinese Female Winner\n";
 
   const row = [
     `"${p.id}"`,
     `"${p.name || ''}"`,
-    `"${p.gender || ''}"`,
     `"${p.age || ''}"`,
+    `"${p.gender || ''}"`,
+    `"${p.attempt || 1}"`,
     `"${p.startTime || ''}"`,
     `"${p.endTime || ''}"`,
     `"${w.find(x => x.categoryId === 'arab_female')?.winnerImageNumber || ''}"`,
@@ -705,7 +871,7 @@ function exportDataAsCSV() {
   csvContent += row + "\n\n";
 
   csvContent += "Decision Log\n";
-  csvContent += "Category,Round,Left Image,Right Image,Winner Chosen,Eliminated Image,Reaction Time (ms),Timestamp\n";
+  csvContent += "Category,Round,Left Image,Right Image,Winner Chosen,Selection Method,Reaction Time (ms),Timestamp\n";
 
   state.history.forEach(h => {
     csvContent += [
@@ -714,13 +880,13 @@ function exportDataAsCSV() {
       h.leftImage,
       h.rightImage,
       h.winnerChosen,
-      h.eliminatedImage,
+      `"${h.selectionMethod || 'pairwise'}"`,
       h.reactionTimeMs,
       `"${h.timestamp}"`
     ].join(",") + "\n";
   });
 
-  downloadFile(csvContent, `survey_results_${p.id}.csv`, 'text/csv;charset=utf-8;');
+  downloadFile(csvContent, `survey_results_${p.id}_attempt_${p.attempt || 1}.csv`, 'text/csv;charset=utf-8;');
 }
 
 /**
@@ -734,7 +900,7 @@ function exportDataAsJSON() {
   };
 
   const jsonStr = JSON.stringify(data, null, 2);
-  downloadFile(jsonStr, `survey_data_${state.participant.id}.json`, 'application/json');
+  downloadFile(jsonStr, `survey_data_${state.participant.id}_attempt_${state.participant.attempt || 1}.json`, 'application/json');
 }
 
 /**
@@ -753,15 +919,28 @@ function downloadFile(content, fileName, mimeType) {
 }
 
 /**
- * Reset application for the next participant
+ * Reset application for a fresh new participant
  */
 function resetForNewParticipant() {
   clearActiveSession();
   state.isSurveyActive = false;
   state.isSurveyCompleted = false;
 
-  const partInput = document.getElementById('participant-id');
-  if (partInput) partInput.value = '';
+  state.participant = {
+    id: '',
+    name: '',
+    gender: '',
+    age: '',
+    attempt: 1,
+    startTime: null,
+    endTime: null
+  };
+
+  const nameInput = document.getElementById('participant-id');
+  if (nameInput) nameInput.value = '';
+
+  const ageInput = document.getElementById('participant-age');
+  if (ageInput) ageInput.value = '';
 
   const banner = document.getElementById('resume-session-banner');
   if (banner) banner.style.display = 'none';
@@ -849,8 +1028,9 @@ function applyLanguageTexts() {
   document.getElementById('inst-3-desc').textContent = t.inst3Desc;
   document.getElementById('lbl-part-id').textContent = t.lblPartId;
   document.getElementById('participant-id').placeholder = t.placeholderPartId;
-  document.getElementById('lbl-gender').textContent = t.lblGender;
   document.getElementById('lbl-age').textContent = t.lblAge;
+  document.getElementById('participant-age').placeholder = t.placeholderAge;
+  document.getElementById('lbl-gender').textContent = t.lblGender;
   document.getElementById('opt-select').textContent = t.optSelect;
   document.getElementById('opt-male').textContent = t.optMale;
   document.getElementById('opt-female').textContent = t.optFemale;
@@ -868,9 +1048,14 @@ function applyLanguageTexts() {
   document.getElementById('lbl-challenger').textContent = t.lblChallenger;
   document.getElementById('lbl-select-a').querySelector('span').textContent = t.lblSelect;
   document.getElementById('lbl-select-b').querySelector('span').textContent = t.lblSelect;
+  document.getElementById('lbl-explore-gallery').textContent = t.lblExploreGallery;
   document.getElementById('txt-choose-left').textContent = t.chooseLeft;
   document.getElementById('txt-choose-right').textContent = t.chooseRight;
   document.getElementById('txt-close-zoom').textContent = t.closeZoom;
+
+  // Gallery Modal
+  document.getElementById('gallery-title').textContent = t.galleryTitle;
+  document.getElementById('gallery-subtitle').textContent = t.gallerySubtitle;
 
   // Interstitial Modal
   document.getElementById('btn-next-cat-text').textContent = t.btnNextCat;
@@ -878,9 +1063,10 @@ function applyLanguageTexts() {
   // Results Screen
   document.getElementById('res-heading').textContent = t.resHeading;
   document.getElementById('res-subtext').textContent = t.resSubtext;
+  document.getElementById('btn-retake-text').textContent = t.btnRetake;
+  document.getElementById('btn-new-eval-text').textContent = t.btnNewEval;
   document.getElementById('btn-csv-text').textContent = t.btnCsv;
   document.getElementById('btn-json-text').textContent = t.btnJson;
-  document.getElementById('btn-new-eval').textContent = t.btnNewEval;
 
   // Re-render winners grid if in results
   if (document.getElementById('screen-results').classList.contains('active')) {
@@ -907,7 +1093,9 @@ function initTheme() {
  * Lightbox / Zoom functions
  */
 function zoomImage(imgElementId) {
-  const src = document.getElementById(imgElementId).src;
+  const imgEl = document.getElementById(imgElementId);
+  if (!imgEl) return;
+  const src = imgEl.src;
   const modal = document.getElementById('lightbox-modal');
   const lightImg = document.getElementById('lightbox-img');
   lightImg.src = src;
@@ -918,7 +1106,7 @@ function closeZoom() {
   document.getElementById('lightbox-modal').classList.remove('active');
 }
 
-// Global functions attached to window for inline onclick handlers
+// Global exports
 window.startSurvey = startSurvey;
 window.selectWinner = selectWinner;
 window.proceedToNextCategory = proceedToNextCategory;
@@ -927,5 +1115,9 @@ window.closeZoom = closeZoom;
 window.exportDataAsCSV = exportDataAsCSV;
 window.exportDataAsJSON = exportDataAsJSON;
 window.resetForNewParticipant = resetForNewParticipant;
+window.retakeSurveyForSameParticipant = retakeSurveyForSameParticipant;
 window.resumeSavedSession = resumeSavedSession;
 window.discardSavedSession = discardSavedSession;
+window.openCategoryGallery = openCategoryGallery;
+window.closeCategoryGallery = closeCategoryGallery;
+window.electGalleryImage = electGalleryImage;

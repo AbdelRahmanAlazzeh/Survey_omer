@@ -57,7 +57,7 @@
 
         <div class="round-counter">
           <span id="lbl-comparison">المقارنة:</span>
-          <span id="round-number-text">1</span> / <span id="total-rounds-text">31</span>
+          <span id="round-number-text">1</span> / <span id="total-rounds-text">35</span>
         </div>
       </div>
 
@@ -106,7 +106,7 @@
             </p>
           </div>
 
-          <!-- Non-noisy, sleek step indicators (informational, not buttons) -->
+          <!-- Informational steps overview -->
           <div class="survey-steps-overview">
             <div class="step-overview-item">
               <span class="step-num">1</span>
@@ -137,14 +137,19 @@
             </div>
           </div>
 
-          <!-- Participant Form -->
+          <!-- Participant Form (Full Name & Age Required) -->
           <form id="participant-form" class="participant-form" onsubmit="event.preventDefault(); startSurvey();">
             <div class="form-group">
-              <label for="participant-id" id="lbl-part-id">اسم المشارك / اللقب (اختياري):</label>
-              <input type="text" id="participant-id" class="form-control" placeholder="أدخل اسمك أو لقبك، أو اتركه فارغاً للبدء مباشرة..." autocomplete="name">
+              <label for="participant-id" id="lbl-part-id">الاسم الكامل (مطلوب) * :</label>
+              <input type="text" id="participant-id" class="form-control" placeholder="أدخل اسمك الكامل..." required minlength="2" autocomplete="name">
             </div>
 
             <div class="form-row-2col">
+              <div class="form-group">
+                <label for="participant-age" id="lbl-age">العمر (مطلوب) * :</label>
+                <input type="number" id="participant-age" class="form-control" placeholder="مثال: 25" min="10" max="110" required>
+              </div>
+
               <div class="form-group">
                 <label for="participant-gender" id="lbl-gender">الجنس (اختياري):</label>
                 <select id="participant-gender" class="form-control">
@@ -152,17 +157,6 @@
                   <option value="male" id="opt-male">ذكر</option>
                   <option value="female" id="opt-female">أنثى</option>
                   <option value="other" id="opt-other">أفضل عدم التحديد</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label for="participant-age" id="lbl-age">الفئة العمرية (اختياري):</label>
-                <select id="participant-age" class="form-control">
-                  <option value="">-- اختر --</option>
-                  <option value="18-24">18 - 24</option>
-                  <option value="25-34">25 - 34</option>
-                  <option value="35-44">35 - 44</option>
-                  <option value="45+">45 فأكثر</option>
                 </select>
               </div>
             </div>
@@ -180,7 +174,14 @@
            ==================================================================== -->
       <section id="screen-arena" class="screen-view">
         <div class="arena-header">
-          <h2 class="arena-title" id="arena-instruction">اختر الصورة المفضلة بالنسبة لك</h2>
+          <div class="arena-header-top">
+            <h2 class="arena-title" id="arena-instruction">اختر الصورة المفضلة بالنسبة لك</h2>
+            <!-- Explore All Button -->
+            <button type="button" class="btn-explore-gallery" onclick="openCategoryGallery()" id="btn-explore-all" title="استعراض كافة صور هذه المجموعة">
+              <span>🖼️</span>
+              <span id="lbl-explore-gallery">معرض جميع الصور</span>
+            </button>
+          </div>
           <p class="arena-hint" id="arena-subhint">انقر مباشرة على الصورة أو استخدم مفاتيح الأسهم (⬅️ / ➡️) أو الأرقام (1 / 2)</p>
         </div>
 
@@ -272,6 +273,7 @@
           <div class="results-trophy">🏆</div>
           <h2 class="results-title" id="res-heading">اكتمل الاستبيان بنجاح!</h2>
           <p class="results-subtitle" id="res-subtext">شكراً لمشاركتك الكريمة! إليك الصور الفائزة بناءً على تفضيلاتك في كل مجموعة:</p>
+          <div id="participant-summary-tag" class="participant-summary-tag"></div>
         </div>
 
         <!-- 4 Winners Showcase Grid -->
@@ -287,6 +289,18 @@
           </div>
 
           <div class="action-buttons-group">
+            <!-- Retake Survey for Same User -->
+            <button type="button" class="btn-primary" style="width: auto;" onclick="retakeSurveyForSameParticipant()" id="btn-retake">
+              <span>🔁</span>
+              <span id="btn-retake-text">إعادة الاستبيان لنفس المشارك</span>
+            </button>
+
+            <!-- Reset for New Participant -->
+            <button type="button" class="btn-secondary" onclick="resetForNewParticipant()" id="btn-new-eval">
+              <span>👤</span>
+              <span id="btn-new-eval-text">مشارك جديد</span>
+            </button>
+
             <button type="button" class="btn-secondary" onclick="exportDataAsCSV()">
               <span>📥</span>
               <span id="btn-csv-text">تحميل تقرير (CSV)</span>
@@ -296,17 +310,30 @@
               <span>📄</span>
               <span id="btn-json-text">تحميل البيانات (JSON)</span>
             </button>
-
-            <button type="button" class="btn-primary" style="width: auto;" onclick="resetForNewParticipant()">
-              <span>🔄</span>
-              <span id="btn-new-eval">مشارك جديد</span>
-            </button>
           </div>
         </div>
       </section>
 
     </div>
   </main>
+
+  <!-- ========================================================================
+       EXPLORE ALL CATEGORY IMAGES GALLERY MODAL
+       ======================================================================== -->
+  <div id="gallery-modal" class="gallery-modal" onclick="closeCategoryGallery()">
+    <div class="gallery-content" onclick="event.stopPropagation()">
+      <div class="gallery-header">
+        <div>
+          <h3 id="gallery-title" class="gallery-title">معرض صور المجموعة</h3>
+          <p id="gallery-subtitle" class="gallery-subtitle">يمكنك معاينة كافة الصور أو النقر على أي صورة لاختيارها مباشرة كخيار مفضل</p>
+        </div>
+        <button type="button" class="btn-gallery-close" onclick="closeCategoryGallery()" title="إغلاق">&times;</button>
+      </div>
+      <div id="gallery-grid" class="gallery-grid">
+        <!-- Rendered dynamically via JS -->
+      </div>
+    </div>
+  </div>
 
   <!-- ========================================================================
        CATEGORY TRANSITION MODAL
