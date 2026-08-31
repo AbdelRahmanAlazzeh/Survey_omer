@@ -840,106 +840,92 @@ body[dir="ltr"] .zoom-btn {
 }
 
 /* ==========================================================================
-   CATEGORY GALLERY MODAL
+   FULL IN-PAGE CATEGORY GALLERY STYLES (NO POPUPS)
    ========================================================================== */
-.gallery-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.88);
-  backdrop-filter: blur(10px);
-  z-index: 110;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: clamp(0.75rem, 2vw, 1.5rem);
-}
-
-.gallery-modal.active {
-  display: flex;
-}
-
-.gallery-content {
-  background: var(--bg-secondary);
+.inpage-gallery-header {
+  background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  width: 100%;
-  max-width: 1050px;
-  max-height: 88vh;
-  max-height: 88dvh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: var(--shadow-lg);
-  animation: fadeIn 0.2s ease;
-}
-
-.gallery-header {
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--border-color);
+  padding: 1.25rem 1.75rem;
+  margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  background: var(--bg-card);
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  box-shadow: var(--shadow-md);
 }
 
-.gallery-title {
-  font-size: clamp(1.05rem, 2.5vw, 1.3rem);
+.inpage-gallery-info {
+  flex: 1;
+  min-width: 260px;
+}
+
+.inpage-gallery-title {
+  font-size: clamp(1.2rem, 3vw, 1.5rem);
   font-weight: 800;
   color: var(--text-primary);
+  margin-bottom: 0.35rem;
 }
 
-.gallery-subtitle {
-  font-size: 0.8rem;
+.inpage-gallery-subtitle {
+  font-size: 0.88rem;
   color: var(--text-secondary);
-  margin-top: 0.15rem;
+  line-height: 1.5;
 }
 
-.btn-gallery-close {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  font-size: 1.6rem;
+.btn-return-arena {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  min-height: 44px;
+  background: var(--primary-light);
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 800;
+  font-family: inherit;
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--radius-sm);
   transition: all var(--transition-fast);
-  line-height: 1;
+  white-space: nowrap;
 }
 
-.btn-gallery-close:hover {
+.btn-return-arena:hover {
+  background: var(--primary);
   color: #fff;
-  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
-.gallery-grid {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1.25rem;
+.inpage-gallery-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.25rem;
+  padding-bottom: 2.5rem;
 }
 
-.gallery-item-card {
+.inpage-gallery-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: all var(--transition-fast);
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-sm);
 }
 
-.gallery-item-card:hover {
+.inpage-gallery-card:hover {
   border-color: var(--primary);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
 }
 
-.gallery-item-card.current-champion {
+.inpage-gallery-card.current-champion {
   border-color: var(--accent-gold);
-  box-shadow: 0 0 14px rgba(245, 158, 11, 0.35);
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.45);
 }
 
 .gallery-thumb-wrap {
@@ -949,14 +935,14 @@ body[dir="ltr"] .zoom-btn {
   overflow: hidden;
 }
 
-.gallery-item-card.item-landscape .gallery-thumb-wrap {
+.inpage-gallery-card.item-landscape .gallery-thumb-wrap {
   aspect-ratio: 3 / 2;
-  height: 120px;
+  height: 180px;
 }
 
-.gallery-item-card.item-portrait .gallery-thumb-wrap {
+.inpage-gallery-card.item-portrait .gallery-thumb-wrap {
   aspect-ratio: 4 / 5;
-  height: 150px;
+  height: 240px;
 }
 
 .gallery-thumb {
@@ -968,89 +954,105 @@ body[dir="ltr"] .zoom-btn {
 
 .gallery-num-badge {
   position: absolute;
-  top: 6px;
-  left: 6px;
-  background: rgba(0, 0, 0, 0.7);
+  top: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.75);
   color: #fff;
-  padding: 0.15rem 0.45rem;
+  padding: 0.2rem 0.55rem;
   border-radius: var(--radius-sm);
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.78rem;
+  font-weight: 800;
+  backdrop-filter: blur(4px);
 }
 
 body[dir="ltr"] .gallery-num-badge {
   left: auto;
-  right: 6px;
+  right: 8px;
 }
 
 .gallery-champ-badge {
   position: absolute;
-  bottom: 6px;
-  right: 6px;
+  bottom: 8px;
+  right: 8px;
   background: var(--accent-gold);
   color: #000;
-  padding: 0.15rem 0.45rem;
+  padding: 0.2rem 0.6rem;
   border-radius: var(--radius-full);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 800;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 body[dir="ltr"] .gallery-champ-badge {
   right: auto;
-  left: 6px;
+  left: 8px;
 }
 
 .gallery-zoom-btn {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  background: rgba(0, 0, 0, 0.6);
-  border: none;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: #fff;
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--radius-full);
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: all var(--transition-fast);
+  backdrop-filter: blur(4px);
+}
+
+.gallery-zoom-btn:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  transform: scale(1.1);
 }
 
 body[dir="ltr"] .gallery-zoom-btn {
   right: auto;
-  left: 6px;
+  left: 8px;
 }
 
 .gallery-card-actions {
-  padding: 0.5rem;
+  padding: 0.65rem 0.75rem;
   background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
 }
 
 .btn-elect-image {
   width: 100%;
-  padding: 0.35rem 0.5rem;
-  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   background: var(--bg-tertiary);
   color: var(--text-primary);
-  font-size: 0.76rem;
-  font-weight: 700;
+  font-size: 0.84rem;
+  font-weight: 800;
   font-family: inherit;
   cursor: pointer;
   transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
 }
 
 .btn-elect-image:hover {
   background: var(--primary);
-  color: #fff;
   border-color: var(--primary);
+  color: #fff;
+  transform: translateY(-1px);
 }
 
 .btn-elect-image.btn-is-champ {
-  background: var(--accent-gold-light);
-  color: var(--accent-gold);
-  border-color: rgba(245, 158, 11, 0.4);
+  background: var(--accent-gold);
+  border-color: var(--accent-gold);
+  color: #000;
   cursor: default;
 }
 

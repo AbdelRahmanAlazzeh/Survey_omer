@@ -170,16 +170,16 @@
       </section>
 
       <!-- ====================================================================
-           2. ARENA / COMPARISON SCREEN
+           2. ARENA / 1v1 PAIRWISE COMPARISON SCREEN
            ==================================================================== -->
       <section id="screen-arena" class="screen-view">
         <div class="arena-header">
           <div class="arena-header-top">
             <h2 class="arena-title" id="arena-instruction">اختر الصورة المفضلة بالنسبة لك</h2>
-            <!-- Explore All Button -->
-            <button type="button" class="btn-explore-gallery" onclick="openCategoryGallery()" id="btn-explore-all" title="استعراض كافة صور هذه المجموعة">
+            <!-- Switch to Full Section Gallery View (In-Page) -->
+            <button type="button" class="btn-explore-gallery" onclick="openCategoryGallery()" id="btn-explore-all" title="استعراض كافة صور هذه المجموعة في صفحة كاملة">
               <span>🖼️</span>
-              <span id="lbl-explore-gallery">معرض جميع الصور</span>
+              <span id="lbl-explore-gallery">معرض جميع صور المجموعة</span>
             </button>
           </div>
           <p class="arena-hint" id="arena-subhint">انقر مباشرة على الصورة أو استخدم مفاتيح الأسهم (⬅️ / ➡️) أو الأرقام (1 / 2)</p>
@@ -266,7 +266,30 @@
       </section>
 
       <!-- ====================================================================
-           3. FINAL RESULTS SCREEN
+           3. FULL IN-PAGE CATEGORY GALLERY VIEW (NO POPUPS)
+           ==================================================================== -->
+      <section id="screen-gallery" class="screen-view">
+        <div class="inpage-gallery-header">
+          <div class="inpage-gallery-info">
+            <h2 id="gallery-title" class="inpage-gallery-title">معرض كافة صور المجموعة</h2>
+            <p id="gallery-subtitle" class="inpage-gallery-subtitle">
+              تصفح جميع صور هذه المجموعة بحرية، ويمكنك النقر على "انتخاب كصورة مفضلة" لاختيار الفائز مباشرة والمتابعة.
+            </p>
+          </div>
+          <button type="button" class="btn-return-arena" onclick="closeCategoryGallery()" id="btn-back-arena">
+            <span>⬅️</span>
+            <span id="lbl-back-arena">العودة للمقارنة الزوجية</span>
+          </button>
+        </div>
+
+        <!-- Full In-Page Responsive Grid -->
+        <div id="gallery-grid" class="inpage-gallery-grid">
+          <!-- Rendered dynamically via JS -->
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           4. FINAL RESULTS SCREEN
            ==================================================================== -->
       <section id="screen-results" class="screen-view">
         <div class="results-header">
@@ -316,24 +339,6 @@
 
     </div>
   </main>
-
-  <!-- ========================================================================
-       EXPLORE ALL CATEGORY IMAGES GALLERY MODAL
-       ======================================================================== -->
-  <div id="gallery-modal" class="gallery-modal" onclick="closeCategoryGallery()">
-    <div class="gallery-content" onclick="event.stopPropagation()">
-      <div class="gallery-header">
-        <div>
-          <h3 id="gallery-title" class="gallery-title">معرض صور المجموعة</h3>
-          <p id="gallery-subtitle" class="gallery-subtitle">يمكنك معاينة كافة الصور أو النقر على أي صورة لاختيارها مباشرة كخيار مفضل</p>
-        </div>
-        <button type="button" class="btn-gallery-close" onclick="closeCategoryGallery()" title="إغلاق">&times;</button>
-      </div>
-      <div id="gallery-grid" class="gallery-grid">
-        <!-- Rendered dynamically via JS -->
-      </div>
-    </div>
-  </div>
 
   <!-- ========================================================================
        CATEGORY TRANSITION MODAL

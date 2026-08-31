@@ -578,13 +578,15 @@ function selectWinner(choice) {
  * ==========================================================================
  */
 function openCategoryGallery() {
-  const modal = document.getElementById('gallery-modal');
   const grid = document.getElementById('gallery-grid');
   const category = SURVEY_CONFIG.categories[state.currentCategoryIndex];
   const lang = state.language;
   const t = I18N[lang];
 
-  document.getElementById('gallery-title').textContent = `${t.galleryTitle} (${lang === 'ar' ? category.titleAr : category.titleEn})`;
+  const catName = lang === 'ar' ? category.titleAr : category.titleEn;
+  const countText = lang === 'ar' ? `[${category.totalImages} صورة]` : `[${category.totalImages} images]`;
+
+  document.getElementById('gallery-title').textContent = `🖼️ ${t.galleryTitle}: ${catName} ${countText}`;
   document.getElementById('gallery-subtitle').textContent = t.gallerySubtitle;
 
   grid.innerHTML = '';
@@ -594,18 +596,18 @@ function openCategoryGallery() {
   for (let i = 1; i <= category.totalImages; i++) {
     const isCurrentChamp = (i === state.currentChampionNumber);
     const card = document.createElement('div');
-    card.className = `gallery-item-card ${isCurrentChamp ? 'current-champion' : ''} ${isLandscape ? 'item-landscape' : 'item-portrait'}`;
+    card.className = `inpage-gallery-card ${isCurrentChamp ? 'current-champion' : ''} ${isLandscape ? 'item-landscape' : 'item-portrait'}`;
 
     card.innerHTML = `
       <div class="gallery-thumb-wrap">
         <img id="gallery-img-${i}" class="gallery-thumb" src="" alt="${category.id} #${i}" loading="lazy">
         <span class="gallery-num-badge">#${i}</span>
         ${isCurrentChamp ? `<span class="gallery-champ-badge">${t.lblCurrentChamp}</span>` : ''}
-        <button type="button" class="gallery-zoom-btn" onclick="event.stopPropagation(); zoomImage('gallery-img-${i}')" title="Zoom">🔍</button>
+        <button type="button" class="gallery-zoom-btn" onclick="event.stopPropagation(); zoomImage('gallery-img-${i}')" title="تكبير للمعاينة">🔍</button>
       </div>
       <div class="gallery-card-actions">
         <button type="button" class="btn-elect-image ${isCurrentChamp ? 'btn-is-champ' : ''}" onclick="electGalleryImage(${i})">
-          ${isCurrentChamp ? t.lblCurrentChamp : t.btnElectImage}
+          ${isCurrentChamp ? t.lblCurrentChamp : ('🏆 ' + t.btnElectImage)}
         </button>
       </div>
     `;
@@ -616,12 +618,13 @@ function openCategoryGallery() {
     setImageSource(imgEl, category, i);
   }
 
-  modal.classList.add('active');
+  showScreen('screen-gallery');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function closeCategoryGallery() {
-  const modal = document.getElementById('gallery-modal');
-  if (modal) modal.classList.remove('active');
+  showScreen('screen-arena');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 /**
