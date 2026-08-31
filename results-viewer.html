@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>عارض تقارير النتائج البصرية | Visual Results Viewer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .viewer-container {
+      max-width: 1050px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    .viewer-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: clamp(1.25rem, 3vw, 2rem);
+      box-shadow: var(--shadow-md);
+    }
+    .input-box-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .input-box {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .input-box label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+    .preview-winners-showcase {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+      margin-top: 2rem;
+    }
+    .preview-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-sm);
+    }
+    .preview-card-header {
+      padding: 0.6rem 0.9rem;
+      font-weight: 800;
+      font-size: 0.85rem;
+      color: #fff;
+      text-align: center;
+    }
+    .preview-img-wrap {
+      width: 100%;
+      height: 260px;
+      background: #020617;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .preview-img-wrap img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    .preview-footer {
+      padding: 0.65rem 0.9rem;
+      font-size: 0.84rem;
+      text-align: center;
+      color: var(--text-primary);
+      font-weight: 700;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border-color);
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="container header-content">
+      <a href="index.html" class="brand-logo">
+        <div class="brand-icon">🖼️</div>
+        <span>عارض تقارير الصور الفائزة (Visual Report Viewer)</span>
+      </a>
+      <a href="index.html" class="btn-secondary" style="font-size: 0.82rem; padding: 0.4rem 0.8rem;">العودة للاستبيان ➔</a>
+    </div>
+  </header>
+
+  <main class="viewer-container">
+    <div class="viewer-card">
+      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.4rem;">🔎 استعراض الصور الفائزة فوراً بالأرقام</h2>
+      <p style="font-size: 0.88rem; color: var(--text-secondary);">
+        أدخل أرقام الصور الفائزة المسجلة في جدول الـ Google Sheet لعرض صور الفائزين بدقة عالية أمامك فوراً:
+      </p>
+
+      <div class="input-box-grid">
+        <div class="input-box">
+          <label>رقم فائزة (إناث عرب):</label>
+          <input type="number" id="num-af" class="form-control" placeholder="1 - 42" min="1" max="42" oninput="updateVisualReport()">
+        </div>
+        <div class="input-box">
+          <label>رقم فائز (ذكور عرب):</label>
+          <input type="number" id="num-am" class="form-control" placeholder="1 - 18" min="1" max="18" oninput="updateVisualReport()">
+        </div>
+        <div class="input-box">
+          <label>رقم فائز (ذكور صينيين):</label>
+          <input type="number" id="num-cm" class="form-control" placeholder="1 - 36" min="1" max="36" oninput="updateVisualReport()">
+        </div>
+        <div class="input-box">
+          <label>رقم فائزة (إناث صينيات):</label>
+          <input type="number" id="num-cf" class="form-control" placeholder="1 - 32" min="1" max="32" oninput="updateVisualReport()">
+        </div>
+      </div>
+
+      <!-- Live Generated Visual Report -->
+      <div id="preview-winners" class="preview-winners-showcase">
+        <!-- Arab Female -->
+        <div class="preview-card">
+          <div class="preview-card-header" style="background: #ec4899;">إناث عرب (Arab Female)</div>
+          <div class="preview-img-wrap">
+            <img id="view-img-af" src="assets/images/arab_female/1.jpg" alt="Arab Female Winner">
+          </div>
+          <div class="preview-footer" id="view-lbl-af">صورة رقم #1</div>
+        </div>
+
+        <!-- Arab Male -->
+        <div class="preview-card">
+          <div class="preview-card-header" style="background: #3b82f6;">ذكور عرب (Arab Male)</div>
+          <div class="preview-img-wrap">
+            <img id="view-img-am" src="assets/images/arab_male/1.jpg" alt="Arab Male Winner">
+          </div>
+          <div class="preview-footer" id="view-lbl-am">صورة رقم #1</div>
+        </div>
+
+        <!-- Chinese Male -->
+        <div class="preview-card">
+          <div class="preview-card-header" style="background: #8b5cf6;">ذكور صينيين (Chinese Male)</div>
+          <div class="preview-img-wrap">
+            <img id="view-img-cm" src="assets/images/chinese_male/1.jpg" alt="Chinese Male Winner">
+          </div>
+          <div class="preview-footer" id="view-lbl-cm">صورة رقم #1</div>
+        </div>
+
+        <!-- Chinese Female -->
+        <div class="preview-card">
+          <div class="preview-card-header" style="background: #10b981;">إناث صينيات (Chinese Female)</div>
+          <div class="preview-img-wrap">
+            <img id="view-img-cf" src="assets/images/chinese_female/1.jpg" alt="Chinese Female Winner">
+          </div>
+          <div class="preview-footer" id="view-lbl-cf">صورة رقم #1</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function updateVisualReport() {
+      const af = parseInt(document.getElementById('num-af').value, 10) || 1;
+      const am = parseInt(document.getElementById('num-am').value, 10) || 1;
+      const cm = parseInt(document.getElementById('num-cm').value, 10) || 1;
+      const cf = parseInt(document.getElementById('num-cf').value, 10) || 1;
+
+      document.getElementById('view-img-af').src = `assets/images/arab_female/${af}.jpg`;
+      document.getElementById('view-lbl-af').textContent = `صورة رقم #${af}`;
+
+      document.getElementById('view-img-am').src = `assets/images/arab_male/${am}.jpg`;
+      document.getElementById('view-lbl-am').textContent = `صورة رقم #${am}`;
+
+      document.getElementById('view-img-cm').src = `assets/images/chinese_male/${cm}.jpg`;
+      document.getElementById('view-lbl-cm').textContent = `صورة رقم #${cm}`;
+
+      document.getElementById('view-img-cf').src = `assets/images/chinese_female/${cf}.jpg`;
+      document.getElementById('view-lbl-cf').textContent = `صورة رقم #${cf}`;
+    }
+  </script>
+</body>
+</html>
