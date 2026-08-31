@@ -9,12 +9,12 @@ const SURVEY_CONFIG = {
     ar: "استبيان التفضيل البصري",
     en: "Visual Preference Survey"
   },
-  
+
   // صيغ الصور المدعومة للبحث التلقائي
   supportedExtensions: ['.jpg', '.jpeg', '.png', '.webp'],
 
   // رابط Google Apps Script Webhook لاستقبال البيانات في Google Sheets
-  googleSheetWebhookUrl: "",
+  googleSheetWebhookUrl: "https://script.google.com/macros/s/AKfycbzfksdMmWwYL2FrwtCJglXINhmtRVg05i9-Y1Ul78crM7UBriyx7FgnUSNlVgiK19b3/exec",
 
   // الفئات الأربعة مع عدد الصور الفعلي ونوع النسبة البصرية (landscape أو portrait)
   categories: [
