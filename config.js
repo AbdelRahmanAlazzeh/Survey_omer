@@ -10,9 +10,6 @@ const SURVEY_CONFIG = {
     en: "Visual Preference & Selection Survey"
   },
   
-  // عدد الصور في كل قسم
-  imagesPerCategory: 35,
-  
   // صيغ الصور المدعومة للبحث التلقائي
   supportedExtensions: ['.jpg', '.jpeg', '.png', '.webp'],
 
@@ -20,7 +17,7 @@ const SURVEY_CONFIG = {
   // ضع الرابط الخاص بك هنا بعد نشره كما هو موضح في ملف google-sheet-script.js
   googleSheetWebhookUrl: "",
 
-  // الفئات الأربعة
+  // الفئات الأربعة مع عدد الصور الفعلي لكل فئة
   categories: [
     {
       id: "arab_female",
@@ -30,7 +27,7 @@ const SURVEY_CONFIG = {
       descEn: "Select the preferred image in each round until the final champion is determined.",
       folder: "assets/images/arab_female",
       badgeColor: "#ec4899", // وردي
-      totalImages: 35
+      totalImages: 32
     },
     {
       id: "arab_male",
@@ -40,7 +37,7 @@ const SURVEY_CONFIG = {
       descEn: "Select the preferred image in each round until the final champion is determined.",
       folder: "assets/images/arab_male",
       badgeColor: "#3b82f6", // أزرق
-      totalImages: 35
+      totalImages: 36
     },
     {
       id: "chinese_male",
@@ -50,7 +47,7 @@ const SURVEY_CONFIG = {
       descEn: "Select the preferred image in each round until the final champion is determined.",
       folder: "assets/images/chinese_male",
       badgeColor: "#8b5cf6", // بنفسجي
-      totalImages: 35
+      totalImages: 18
     },
     {
       id: "chinese_female",
@@ -60,7 +57,7 @@ const SURVEY_CONFIG = {
       descEn: "Select the preferred image in each round until the final champion is determined.",
       folder: "assets/images/chinese_female",
       badgeColor: "#10b981", // زمردي
-      totalImages: 35
+      totalImages: 42
     }
   ],
 
