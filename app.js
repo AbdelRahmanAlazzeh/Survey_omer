@@ -7,6 +7,7 @@
  * - Resilient Session Recovery on Page Reload / Accidental Refresh
  * - Same-User Re-take Survey Support with Deduplicated Data Versioning
  * - Mandatory Full Name & Age Validation
+ * - Non-Technical Admin Dashboard with Live Response Browser & 1-Click All-Data Export
  * - Google Sheets Realtime Webhook Integration & CSV/JSON Export
  */
 
@@ -48,6 +49,7 @@ const I18N = {
   ar: {
     appTitle: "استبيان التفضيل البصري",
     btnLang: "English",
+    lblAdminBtn: "سجل المشاركات",
     welcomeHeading: "استبيان التفضيل والمفاضلة البصرية",
     welcomeSubtext: "نرحب بمشاركتك الكريمة. يهدف هذا البحث إلى دراسة التفضيلات البصرية عبر 4 مجموعات مختلفة من الصور بنظام المقارنة المباشرة.",
     inst1Title: "مقارنة زوجية",
@@ -106,6 +108,7 @@ const I18N = {
   en: {
     appTitle: "Visual Preference Survey",
     btnLang: "العربية",
+    lblAdminBtn: "Records",
     welcomeHeading: "Visual Face Preference Survey",
     welcomeSubtext: "Welcome. This research study evaluates visual preferences across 4 distinct image groups through direct pairwise comparisons.",
     inst1Title: "Pairwise Comparison",
@@ -186,6 +189,7 @@ function initEventListeners() {
     if (e.key === 'Escape') {
       closeZoom();
       closeCategoryGallery();
+      closeAdminModal();
     }
   });
 
@@ -203,8 +207,10 @@ function initEventListeners() {
 function handleKeyNavigation(e) {
   const arenaScreen = document.getElementById('screen-arena');
   const galleryModal = document.getElementById('gallery-modal');
+  const adminModal = document.getElementById('admin-modal');
   if (!arenaScreen || !arenaScreen.classList.contains('active') || state.isProcessingDecision) return;
   if (galleryModal && galleryModal.classList.contains('active')) return;
+  if (adminModal && adminModal.classList.contains('active')) return;
 
   if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
 
@@ -240,7 +246,6 @@ function startSurvey() {
     return;
   }
 
-  // Create clean participant identifier
   const cleanId = fullName.toLowerCase().replace(/[^a-z0-9\u0600-\u06FF]/gi, '_') + '_' + ageVal;
 
   state.participant.name = fullName;
@@ -263,7 +268,7 @@ function startSurvey() {
 }
 
 /**
- * Retake Survey for the Same Participant (handles multiple attempts without redundant duplication)
+ * Retake Survey for the Same Participant
  */
 function retakeSurveyForSameParticipant() {
   state.participant.attempt = (state.participant.attempt || 1) + 1;
@@ -798,15 +803,14 @@ async function submitSurveyData() {
   try {
     const existingList = JSON.parse(localStorage.getItem('SURVEY_RESPONSES') || '[]');
     
-    // Check if record exists for same participant & attempt
     const index = existingList.findIndex(
       r => r.participantId === state.participant.id && r.attemptNumber === currentAttempt
     );
 
     if (index >= 0) {
-      existingList[index] = payload; // Update existing attempt
+      existingList[index] = payload;
     } else {
-      existingList.push(payload); // Add new attempt
+      existingList.push(payload);
     }
 
     localStorage.setItem('SURVEY_RESPONSES', JSON.stringify(existingList));
@@ -845,7 +849,100 @@ async function submitSurveyData() {
 }
 
 /**
- * Export Responses to CSV file
+ * ==========================================================================
+ * ADMIN DASHBOARD & LOCAL RESPONSE BROWSER
+ * ==========================================================================
+ */
+function openAdminModal() {
+  const modal = document.getElementById('admin-modal');
+  renderAdminTable();
+  if (modal) modal.classList.add('active');
+}
+
+function closeAdminModal() {
+  const modal = document.getElementById('admin-modal');
+  if (modal) modal.classList.remove('active');
+}
+
+function renderAdminTable() {
+  const tbody = document.getElementById('admin-table-body');
+  const countEl = document.getElementById('admin-stats-count');
+  if (!tbody) return;
+
+  const responses = JSON.parse(localStorage.getItem('SURVEY_RESPONSES') || '[]');
+  countEl.innerHTML = `إجمالي المشاركات المسجلة: <strong>${responses.length}</strong>`;
+
+  if (responses.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+          لا توجد استجابات مسجلة حتى الآن على هذا المتصفح.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = '';
+  responses.forEach((r, idx) => {
+    const tr = document.createElement('tr');
+    const timeStr = r.endTime ? new Date(r.endTime).toLocaleString() : 'N/A';
+
+    tr.innerHTML = `
+      <td>${idx + 1}</td>
+      <td><strong>${r.participantName || 'Anonymous'}</strong></td>
+      <td>${r.participantAge || 'N/A'}</td>
+      <td>${r.gender || 'N/A'}</td>
+      <td><span class="badge-attempt">#${r.attemptNumber || 1}</span></td>
+      <td><span class="badge-winner win-pink">صورة ${r.winnerArabFemale || '-'}</span></td>
+      <td><span class="badge-winner win-blue">صورة ${r.winnerArabMale || '-'}</span></td>
+      <td><span class="badge-winner win-purple">صورة ${r.winnerChineseMale || '-'}</span></td>
+      <td><span class="badge-winner win-green">صورة ${r.winnerChineseFemale || '-'}</span></td>
+      <td style="font-size: 0.78rem; color: var(--text-muted);">${timeStr}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function exportAllParticipantsCSV() {
+  const responses = JSON.parse(localStorage.getItem('SURVEY_RESPONSES') || '[]');
+  if (responses.length === 0) {
+    alert('لا توجد بيانات مسجلة لتصديرها.');
+    return;
+  }
+
+  let csv = "\uFEFF"; // UTF-8 BOM
+  csv += "Record #,Participant Name,Age,Gender,Attempt #,Arab Female Winner,Arab Male Winner,Chinese Male Winner,Chinese Female Winner,Start Time,End Time,Total Decisions\n";
+
+  responses.forEach((r, idx) => {
+    csv += [
+      idx + 1,
+      `"${r.participantName || ''}"`,
+      `"${r.participantAge || ''}"`,
+      `"${r.gender || ''}"`,
+      `"${r.attemptNumber || 1}"`,
+      `"${r.winnerArabFemale || ''}"`,
+      `"${r.winnerArabMale || ''}"`,
+      `"${r.winnerChineseMale || ''}"`,
+      `"${r.winnerChineseFemale || ''}"`,
+      `"${r.startTime || ''}"`,
+      `"${r.endTime || ''}"`,
+      `"${r.totalDecisions || ''}"`
+    ].join(",") + "\n";
+  });
+
+  downloadFile(csv, `ALL_SURVEY_PARTICIPANTS_${new Date().toISOString().slice(0,10)}.csv`, 'text/csv;charset=utf-8;');
+}
+
+function clearAllParticipantData() {
+  if (confirm('هل أنت متأكد من مسح جميع سجلات المشاركين من هذا الجهاز؟ لن يمكن استرجاعها.')) {
+    localStorage.removeItem('SURVEY_RESPONSES');
+    renderAdminTable();
+  }
+}
+
+/**
+ * Export Single Participant to CSV
  */
 function exportDataAsCSV() {
   const p = state.participant;
@@ -1017,6 +1114,9 @@ function applyLanguageTexts() {
   const langLabel = document.querySelector('.lang-label');
   if (langLabel) langLabel.textContent = t.btnLang;
 
+  const adminBtnLbl = document.getElementById('lbl-admin-btn');
+  if (adminBtnLbl) adminBtnLbl.textContent = t.lblAdminBtn;
+
   // Welcome Screen
   document.getElementById('welcome-heading').textContent = t.welcomeHeading;
   document.getElementById('welcome-subtext').textContent = t.welcomeSubtext;
@@ -1121,3 +1221,7 @@ window.discardSavedSession = discardSavedSession;
 window.openCategoryGallery = openCategoryGallery;
 window.closeCategoryGallery = closeCategoryGallery;
 window.electGalleryImage = electGalleryImage;
+window.openAdminModal = openAdminModal;
+window.closeAdminModal = closeAdminModal;
+window.exportAllParticipantsCSV = exportAllParticipantsCSV;
+window.clearAllParticipantData = clearAllParticipantData;

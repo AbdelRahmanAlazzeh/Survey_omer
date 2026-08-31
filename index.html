@@ -27,6 +27,12 @@
       </a>
 
       <div class="header-controls">
+        <!-- Admin Dashboard Button -->
+        <button id="btn-open-admin" class="admin-nav-btn" onclick="openAdminModal()" title="لوحة نتائج المشاركين (للمسؤول)" type="button">
+          <span>📊</span>
+          <span id="lbl-admin-btn">سجل المشاركات</span>
+        </button>
+
         <!-- Language Switcher -->
         <button id="btn-toggle-lang" class="lang-toggle-btn" title="تغيير اللغة / Switch Language" type="button">
           <span class="lang-icon">🌐</span>
@@ -316,6 +322,61 @@
 
     </div>
   </main>
+
+  <!-- ========================================================================
+       ADMIN DASHBOARD MODAL (FOR VIEWING ALL PARTICIPANT RESPONSES)
+       ======================================================================== -->
+  <div id="admin-modal" class="admin-modal" onclick="closeAdminModal()">
+    <div class="admin-modal-content" onclick="event.stopPropagation()">
+      <div class="admin-modal-header">
+        <div>
+          <h3 id="admin-modal-title">📊 لوحة سجل المشاركين والنتائج (Admin View)</h3>
+          <p id="admin-modal-subtitle">استعراض كافة نتائج وتفضيلات المشاركين المسجلة محلياً مع خيار التصدير الكامل.</p>
+        </div>
+        <button type="button" class="btn-gallery-close" onclick="closeAdminModal()" title="إغلاق">&times;</button>
+      </div>
+
+      <div class="admin-modal-body">
+        <div class="admin-toolbar">
+          <div class="admin-stats" id="admin-stats-count">
+            إجمالي المشاركات: <strong>0</strong>
+          </div>
+          <div class="admin-actions">
+            <button type="button" class="btn-secondary" onclick="exportAllParticipantsCSV()">
+              <span>📥</span>
+              <span>تصدير كل المشاركين (Excel / CSV)</span>
+            </button>
+            <button type="button" class="btn-discard" onclick="clearAllParticipantData()">
+              <span>🗑️</span>
+              <span>مسح السجل المحلي</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>اسم المشارك</th>
+                <th>العمر</th>
+                <th>الجنس</th>
+                <th>المحاولة</th>
+                <th>فائزة (إناث عرب)</th>
+                <th>فائز (ذكور عرب)</th>
+                <th>فائز (ذكور صينيين)</th>
+                <th>فائزة (إناث صينيات)</th>
+                <th>وقت التسجيل</th>
+              </tr>
+            </thead>
+            <tbody id="admin-table-body">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- ========================================================================
        EXPLORE ALL CATEGORY IMAGES GALLERY MODAL
