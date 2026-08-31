@@ -1,23 +1,22 @@
 /**
  * Survey Configuration Settings
- * إعدادات استبيان تصفية ومقارنة الصور
+ * إعدادات استبيان تفضيل ومقارنة الصور
  */
 
 const SURVEY_CONFIG = {
   // عنوان الاستبيان
   title: {
-    ar: "استبيان المفاضلة والاختيار البصري",
-    en: "Visual Preference & Selection Survey"
+    ar: "استبيان التفضيل البصري",
+    en: "Visual Preference Survey"
   },
   
   // صيغ الصور المدعومة للبحث التلقائي
   supportedExtensions: ['.jpg', '.jpeg', '.png', '.webp'],
 
   // رابط Google Apps Script Webhook لاستقبال البيانات في Google Sheets
-  // ضع الرابط الخاص بك هنا بعد نشره كما هو موضح في ملف google-sheet-script.js
   googleSheetWebhookUrl: "",
 
-  // الفئات الأربعة مع عدد الصور الفعلي لكل فئة
+  // الفئات الأربعة مع عدد الصور الفعلي ونوع النسبة البصرية (landscape أو portrait)
   categories: [
     {
       id: "arab_female",
@@ -27,7 +26,8 @@ const SURVEY_CONFIG = {
       descEn: "Select the preferred image in each round until the final champion is determined.",
       folder: "assets/images/arab_female",
       badgeColor: "#ec4899", // وردي
-      totalImages: 32
+      totalImages: 32,
+      aspectRatioType: "landscape" // 3:2
     },
     {
       id: "arab_male",
@@ -37,7 +37,8 @@ const SURVEY_CONFIG = {
       descEn: "Select the preferred image in each round until the final champion is determined.",
       folder: "assets/images/arab_male",
       badgeColor: "#3b82f6", // أزرق
-      totalImages: 36
+      totalImages: 36,
+      aspectRatioType: "landscape" // 3:2
     },
     {
       id: "chinese_male",
@@ -47,7 +48,8 @@ const SURVEY_CONFIG = {
       descEn: "Select the preferred image in each round until the final champion is determined.",
       folder: "assets/images/chinese_male",
       badgeColor: "#8b5cf6", // بنفسجي
-      totalImages: 18
+      totalImages: 18,
+      aspectRatioType: "portrait" // 4:5
     },
     {
       id: "chinese_female",
@@ -57,17 +59,15 @@ const SURVEY_CONFIG = {
       descEn: "Select the preferred image in each round until the final champion is determined.",
       folder: "assets/images/chinese_female",
       badgeColor: "#10b981", // زمردي
-      totalImages: 42
+      totalImages: 42,
+      aspectRatioType: "portrait" // 4:5
     }
   ],
 
   // إعدادات إضافية
   settings: {
-    // تفعيل الاختصارات من لوحة المفاتيح (1/2 أو الأسهم)
     enableKeyboardShortcuts: true,
-    // حفظ التقدم مؤقتاً في متصفح المستخدم
     persistProgressLocally: true,
-    // إمكانية تكبير الصورة للمعاينة الدقيقة
     enableZoomPreview: true
   }
 };

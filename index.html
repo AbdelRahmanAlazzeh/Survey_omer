@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>استبيان المفاضلة والاختيار البصري | Visual Preference Survey</title>
+  <title>استبيان التفضيل والمفاضلة البصرية | Visual Preference Survey</title>
   
   <!-- Meta Descriptions for SEO and Social Sharing -->
-  <meta name="description" content="منصة استبيان وتصفية الصور الزوجية للمفاضلة والاختيار البصري عبر 4 فئات">
+  <meta name="description" content="استبيان تفاعلي للمفاضلة البصرية ودراسة التفضيلات عبر 4 مجموعات مختلفة بنظام المقارنة المباشرة.">
   
   <!-- Google Fonts: Cairo (Arabic) & Plus Jakarta Sans (English) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,19 +21,20 @@
   <!-- Top Header Navigation -->
   <header class="header">
     <div class="container header-content">
-      <a href="#" class="brand-logo">
-        <div class="brand-icon">👑</div>
-        <span id="app-title-text">استبيان المفاضلة البصرية</span>
+      <a href="#" class="brand-logo" onclick="event.preventDefault();">
+        <div class="brand-icon">✨</div>
+        <span id="app-title-text">استبيان التفضيل البصري</span>
       </a>
 
       <div class="header-controls">
         <!-- Language Switcher -->
-        <button id="btn-toggle-lang" class="lang-toggle-btn" title="تغيير اللغة / Switch Language">
-          English 🌐
+        <button id="btn-toggle-lang" class="lang-toggle-btn" title="تغيير اللغة / Switch Language" type="button">
+          <span class="lang-icon">🌐</span>
+          <span class="lang-label">English</span>
         </button>
 
         <!-- Dark / Light Theme Toggle -->
-        <button id="btn-toggle-theme" class="btn-icon" title="تبديل المظهر / Toggle Theme" aria-label="Toggle Theme">
+        <button id="btn-toggle-theme" class="btn-icon" title="تبديل المظهر / Toggle Theme" aria-label="Toggle Theme" type="button">
           🌙
         </button>
       </div>
@@ -47,16 +48,16 @@
         <div class="category-indicator">
           <div id="current-category-badge" class="category-badge">
             <span id="cat-icon">📂</span>
-            <span id="cat-title">الفئة: إناث - الشرق الأوسط</span>
+            <span id="cat-title">المجموعة: إناث - الشرق الأوسط</span>
           </div>
           <span class="round-counter">
-            <span id="cat-progress-text">الفئة 1 من 4</span>
+            <span id="cat-progress-text">المجموعة 1 من 4</span>
           </span>
         </div>
 
         <div class="round-counter">
           <span id="lbl-comparison">المقارنة:</span>
-          <span id="round-number-text">1</span> / <span id="total-rounds-text">34</span>
+          <span id="round-number-text">1</span> / <span id="total-rounds-text">31</span>
         </div>
       </div>
 
@@ -76,41 +77,74 @@
            ==================================================================== -->
       <section id="screen-welcome" class="screen-view active">
         <div class="welcome-card">
+
+          <!-- Resume Session Banner (Only shown if user has active saved progress) -->
+          <div id="resume-session-banner" class="resume-session-banner" style="display: none;">
+            <div class="resume-banner-info">
+              <span class="resume-icon">⚡</span>
+              <div>
+                <strong id="resume-banner-title">لديك استبيان قيد التقدم</strong>
+                <p id="resume-banner-desc">يمكنك استئناف جلسة التقييم السابقة من حيث توقفت أو البدء من جديد.</p>
+              </div>
+            </div>
+            <div class="resume-banner-actions">
+              <button type="button" class="btn-resume" onclick="resumeSavedSession()">
+                <span id="btn-resume-text">استئناف المتابعة</span>
+                <span>▶</span>
+              </button>
+              <button type="button" class="btn-discard" onclick="discardSavedSession()" title="حذف الجلسة السابقة والبدء من جديد">
+                <span id="btn-discard-text">بدء جديد</span>
+                <span>×</span>
+              </button>
+            </div>
+          </div>
+
           <div class="welcome-header">
-            <h1 class="welcome-title" id="welcome-heading">مرحباً بك في استبيان المفاضلة والاختيار البصري</h1>
+            <h1 class="welcome-title" id="welcome-heading">استبيان التفضيل والمفاضلة البصرية</h1>
             <p class="welcome-subtitle" id="welcome-subtext">
-              يهدف هذا الاستبيان إلى دراسة التفضيل البصري للوجوه عبر 4 فئات مختلفة بنظام التصفية الزوجية.
+              نرحب بمشاركتك الكريمة. يهدف هذا البحث إلى دراسة التفضيلات البصرية عبر 4 مجموعات مختلفة من الصور بنظام المقارنة المباشرة.
             </p>
           </div>
 
-          <div class="instructions-grid">
-            <div class="instruction-item">
-              <span class="instruction-icon">⚔️</span>
-              <h4 id="inst-1-title">مقارنة زوجية</h4>
-              <p id="inst-1-desc">ستظهر لك صورتان جنباً إلى جنب في كل جولة، اختر الصورة الأفضل بالنسبة لك.</p>
+          <!-- Non-noisy, sleek step indicators (informational, not buttons) -->
+          <div class="survey-steps-overview">
+            <div class="step-overview-item">
+              <span class="step-num">1</span>
+              <div class="step-text">
+                <strong id="inst-1-title">مقارنة زوجية</strong>
+                <span id="inst-1-desc">تُعرض صورتان جنباً إلى جنب في كل جولة</span>
+              </div>
             </div>
 
-            <div class="instruction-item">
-              <span class="instruction-icon">👑</span>
-              <h4 id="inst-2-title">بقاء الفائز</h4>
-              <p id="inst-2-desc">الصورة التي تختارها تبقى لمنافسة الصورة التالية، وتُستبعد الصورة الأخرى.</p>
+            <div class="step-arrow">←</div>
+
+            <div class="step-overview-item">
+              <span class="step-num">2</span>
+              <div class="step-text">
+                <strong id="inst-2-title">اختيار الأنسب</strong>
+                <span id="inst-2-desc">اختر الصورة المفضلة بنظرك للمتابعة</span>
+              </div>
             </div>
 
-            <div class="instruction-item">
-              <span class="instruction-icon">🏆</span>
-              <h4 id="inst-3-title">النتيجة النهائية</h4>
-              <p id="inst-3-desc">في نهاية الاستبيان سنصل إلى 4 صور فائزة تمثل اختياراتك عبر الفئات الأربعة.</p>
+            <div class="step-arrow">←</div>
+
+            <div class="step-overview-item">
+              <span class="step-num">3</span>
+              <div class="step-text">
+                <strong id="inst-3-title">النتيجة النهائية</strong>
+                <span id="inst-3-desc">تحديد الخيار الفائز لكل مجموعة بصورة دقيقة</span>
+              </div>
             </div>
           </div>
 
           <!-- Participant Form -->
           <form id="participant-form" class="participant-form" onsubmit="event.preventDefault(); startSurvey();">
             <div class="form-group">
-              <label for="participant-id" id="lbl-part-id">كود المقيّم / الاسم (Participant ID):</label>
-              <input type="text" id="participant-id" class="form-control" placeholder="أدخل اسمك أو كود المقيم..." required>
+              <label for="participant-id" id="lbl-part-id">اسم المشارك / اللقب (اختياري):</label>
+              <input type="text" id="participant-id" class="form-control" placeholder="أدخل اسمك أو لقبك، أو اتركه فارغاً للبدء مباشرة..." autocomplete="name">
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-row-2col">
               <div class="form-group">
                 <label for="participant-gender" id="lbl-gender">الجنس (اختياري):</label>
                 <select id="participant-gender" class="form-control">
@@ -133,7 +167,7 @@
               </div>
             </div>
 
-            <button type="submit" id="btn-start-survey" class="btn-primary" style="margin-top: 1rem;">
+            <button type="submit" id="btn-start-survey" class="btn-primary" style="margin-top: 1.25rem;">
               <span>بدء الاستبيان</span>
               <span>🚀</span>
             </button>
@@ -142,41 +176,40 @@
       </section>
 
       <!-- ====================================================================
-           2. ARENA / BATTLE SCREEN (KING OF THE HILL)
+           2. ARENA / COMPARISON SCREEN
            ==================================================================== -->
       <section id="screen-arena" class="screen-view">
         <div class="arena-header">
-          <h2 class="arena-title" id="arena-instruction">انقر على الصورة المفضلة بالنسبة لك</h2>
-          <p class="arena-hint" id="arena-subhint">يمكنك استخدام الأسهم في لوحة المفاتيح أو النقر المباشر</p>
+          <h2 class="arena-title" id="arena-instruction">اختر الصورة المفضلة بالنسبة لك</h2>
+          <p class="arena-hint" id="arena-subhint">انقر مباشرة على الصورة أو استخدم مفاتيح الأسهم (⬅️ / ➡️) أو الأرقام (1 / 2)</p>
         </div>
 
-        <div class="battle-arena">
-          <!-- Left Candidate (Champion or Candidate A) -->
-          <div id="card-candidate-a" class="candidate-card champion-card" onclick="selectWinner('left')">
-            <div id="badge-card-a" class="card-badge badge-champion">
-              <span>👑</span>
-              <span id="lbl-champion">الصورة الحالية</span>
+        <div id="battle-arena-container" class="battle-arena arena-landscape">
+          <!-- Left Candidate (Option A) -->
+          <div id="card-candidate-a" class="candidate-card" onclick="selectWinner('left')">
+            <div id="badge-card-a" class="card-badge badge-option-a">
+              <span class="badge-dot"></span>
+              <span id="lbl-champion">الخيار (1)</span>
             </div>
 
             <div class="card-image-wrapper">
-              <img id="img-candidate-a" class="card-image" src="" alt="Candidate A" loading="eager">
-              <button type="button" class="zoom-btn" title="تكبير الصورة" onclick="event.stopPropagation(); zoomImage('img-candidate-a');">
+              <img id="img-candidate-a" class="card-image" src="" alt="Candidate 1" loading="eager">
+              <button type="button" class="zoom-btn" title="تكبير الصورة للمعاينة" onclick="event.stopPropagation(); zoomImage('img-candidate-a');" aria-label="Zoom Image">
                 🔍
               </button>
             </div>
 
             <div class="card-footer">
-              <div>
-                <div id="title-candidate-a" class="image-label">صورة 1</div>
-                <div class="key-hint" id="hint-key-left">
-                  <span>اضغط</span>
+              <div class="card-footer-info">
+                <span class="key-hint" id="hint-key-left">
+                  <span>مفتاح</span>
                   <span class="kbd">⬅️</span> أو <span class="kbd">1</span>
-                </div>
+                </span>
               </div>
-              <button type="button" class="select-btn" id="btn-select-a">
-                <span id="lbl-select-a">اختيار</span>
-                <span>✓</span>
-              </button>
+              <div class="select-indicator" id="lbl-select-a">
+                <span>اختيار هذا</span>
+                <span class="indicator-check">✓</span>
+              </div>
             </div>
           </div>
 
@@ -185,32 +218,31 @@
             <div class="vs-badge">VS</div>
           </div>
 
-          <!-- Right Candidate (Challenger or Candidate B) -->
+          <!-- Right Candidate (Option B) -->
           <div id="card-candidate-b" class="candidate-card" onclick="selectWinner('right')">
-            <div id="badge-card-b" class="card-badge badge-challenger">
-              <span>⚔️</span>
-              <span id="lbl-challenger">المنافس الجديد</span>
+            <div id="badge-card-b" class="card-badge badge-option-b">
+              <span class="badge-dot"></span>
+              <span id="lbl-challenger">الخيار (2)</span>
             </div>
 
             <div class="card-image-wrapper">
-              <img id="img-candidate-b" class="card-image" src="" alt="Candidate B" loading="eager">
-              <button type="button" class="zoom-btn" title="تكبير الصورة" onclick="event.stopPropagation(); zoomImage('img-candidate-b');">
+              <img id="img-candidate-b" class="card-image" src="" alt="Candidate 2" loading="eager">
+              <button type="button" class="zoom-btn" title="تكبير الصورة للمعاينة" onclick="event.stopPropagation(); zoomImage('img-candidate-b');" aria-label="Zoom Image">
                 🔍
               </button>
             </div>
 
             <div class="card-footer">
-              <div>
-                <div id="title-candidate-b" class="image-label">صورة 2</div>
-                <div class="key-hint" id="hint-key-right">
-                  <span>اضغط</span>
+              <div class="card-footer-info">
+                <span class="key-hint" id="hint-key-right">
+                  <span>مفتاح</span>
                   <span class="kbd">➡️</span> أو <span class="kbd">2</span>
-                </div>
+                </span>
               </div>
-              <button type="button" class="select-btn" id="btn-select-b">
-                <span id="lbl-select-b">اختيار</span>
-                <span>✓</span>
-              </button>
+              <div class="select-indicator" id="lbl-select-b">
+                <span>اختيار هذا</span>
+                <span class="indicator-check">✓</span>
+              </div>
             </div>
           </div>
         </div>
@@ -239,7 +271,7 @@
         <div class="results-header">
           <div class="results-trophy">🏆</div>
           <h2 class="results-title" id="res-heading">اكتمل الاستبيان بنجاح!</h2>
-          <p class="results-subtitle" id="res-subtext">شكراً لمشاركتك! إليك الصور الأربعة الفائزة بناءً على اختياراتك في كل فئة:</p>
+          <p class="results-subtitle" id="res-subtext">شكراً لمشاركتك الكريمة! إليك الصور الفائزة بناءً على تفضيلاتك في كل مجموعة:</p>
         </div>
 
         <!-- 4 Winners Showcase Grid -->
@@ -267,7 +299,7 @@
 
             <button type="button" class="btn-primary" style="width: auto;" onclick="resetForNewParticipant()">
               <span>🔄</span>
-              <span id="btn-new-eval">مقيّم جديد</span>
+              <span id="btn-new-eval">مشارك جديد</span>
             </button>
           </div>
         </div>
@@ -281,13 +313,13 @@
        ======================================================================== -->
   <div id="interstitial-modal" class="interstitial-modal">
     <div class="interstitial-box">
-      <div class="interstitial-icon">🎉</div>
-      <h3 class="interstitial-title" id="trans-title">رائع! انتهت هذه الفئة</h3>
+      <div class="interstitial-icon">🎯</div>
+      <h3 class="interstitial-title" id="trans-title">انتهت هذه المجموعة</h3>
       <p class="interstitial-desc" id="trans-desc">
-        تم تحديد الصورة الفائزة في هذه الفئة. اضغط أدناه للانتقال إلى الفئة التالية.
+        تم تحديد الخيار المفضل في هذه المجموعة بنجاح. اضغط أدناه للمتابعة إلى المجموعة التالية.
       </p>
       <button type="button" class="btn-primary" onclick="proceedToNextCategory()">
-        <span id="btn-next-cat-text">متابعة إلى الفئة التالية</span>
+        <span id="btn-next-cat-text">المتابعة إلى المجموعة التالية</span>
         <span>➡️</span>
       </button>
     </div>

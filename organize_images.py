@@ -1,5 +1,6 @@
 import os
 import shutil
+import re
 from PIL import Image, ImageOps
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -10,25 +11,29 @@ categories = [
         'src': os.path.join(parent_dir, 'fortest', 'girls'),
         'dst': os.path.join(base_dir, 'assets', 'images', 'arab_female'),
         'id': 'arab_female',
-        'title': 'Arab Females'
+        'title': 'Arab Females',
+        'aspectRatioType': 'landscape'
     },
     {
         'src': os.path.join(parent_dir, 'fortest', 'boys'),
         'dst': os.path.join(base_dir, 'assets', 'images', 'arab_male'),
         'id': 'arab_male',
-        'title': 'Arab Males'
+        'title': 'Arab Males',
+        'aspectRatioType': 'landscape'
     },
     {
         'src': os.path.join(parent_dir, 'New folder (2)', 'boys'),
         'dst': os.path.join(base_dir, 'assets', 'images', 'chinese_male'),
         'id': 'chinese_male',
-        'title': 'Chinese Males'
+        'title': 'Chinese Males',
+        'aspectRatioType': 'portrait'
     },
     {
         'src': os.path.join(parent_dir, 'New folder (2)', 'girls'),
         'dst': os.path.join(base_dir, 'assets', 'images', 'chinese_female'),
         'id': 'chinese_female',
-        'title': 'Chinese Females'
+        'title': 'Chinese Females',
+        'aspectRatioType': 'portrait'
     }
 ]
 
@@ -36,19 +41,27 @@ valid_exts = {'.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff'}
 counts = {}
 
 for cat in categories:
-    # Clear dst folder if exists
     if os.path.exists(cat['dst']):
         shutil.rmtree(cat['dst'])
     os.makedirs(cat['dst'], exist_ok=True)
     
-    # Get all unique files in source directory
+    if not os.path.exists(cat['src']):
+        print(f"Warning: Source folder {cat['src']} does not exist.")
+        counts[cat['id']] = 0
+        continue
+
     all_files = os.listdir(cat['src'])
     files = [
         f for f in all_files
         if os.path.splitext(f.lower())[1] in valid_exts and os.path.isfile(os.path.join(cat['src'], f))
     ]
     
-    files.sort()
+    # Sort files naturally
+    try:
+        files.sort(key=lambda x: [int(c) if c.isdigit() else c.lower() for c in re.split(r'(\d+)', x)])
+    except Exception:
+        files.sort()
+
     count = len(files)
     counts[cat['id']] = count
     print(f"Processing {cat['title']}: {count} unique images...")
@@ -59,7 +72,6 @@ for cat in categories:
             with Image.open(file_path) as img:
                 img = ImageOps.exif_transpose(img)
                 img = img.convert('RGB')
-                # Resize keeping aspect ratio, max 1200px
                 img.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
                 
                 out_path = os.path.join(cat['dst'], f"{i}.jpg")
@@ -70,3 +82,17 @@ for cat in categories:
 print("\nSuccessfully organized and optimized images:")
 for cat_id, cnt in counts.items():
     print(f" - {cat_id}: {cnt} images (1.jpg to {cnt}.jpg)")
+
+# Auto-update config.js totalImages
+config_path = os.path.join(base_dir, 'config.js')
+if os.path.exists(config_path):
+    with open(config_path, 'r', encoding='utf-8') as f:
+        cfg_content = f.read()
+
+    for cat_id, cnt in counts.items():
+        pattern = rf'(id:\s*"{cat_id}"[\s\S]*?totalImages:\s*)\d+'
+        cfg_content = re.sub(pattern, rf'\g<1>{cnt}', cfg_content)
+
+    with open(config_path, 'w', encoding='utf-8') as f:
+        f.write(cfg_content)
+    print("Updated config.js with accurate image counts automatically!")
