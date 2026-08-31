@@ -1,43 +1,24 @@
-/**
- * ==============================================================================
- * GOOGLE APPS SCRIPT FOR SURVEY RESPONSES WITH VISUAL IMAGES EMBEDDED
- * كود استقبال النتائج في Google Sheets مع عرض الصور المصغرة والروابط مباشرة
- * ==============================================================================
- *
- * 📌 لتحديث الكود في جدولك الحالي (Update in 1 Minute):
- * 1. افتح جدول Google Sheet الخاص بك.
- * 2. من القائمة العلوية: Extensions (الإضافات) -> Apps Script.
- * 3. استبدل الكود الموجود بهذا الكود كاملاً.
- * 4. اضغط حفظ (Save) 💾.
- * 5. اضغط Deploy -> Manage deployments -> اضغط على علامة القلم ✏️ (Edit).
- * 6. اختر Version: New version واضغط Deploy.
- *
- * النتيجة: ستظهر الصور الفعلية لكل فائز مباشرة داخل خلايا الجدول مع روابط للمعاينة الكبيرة!
- * ==============================================================================
- */
-
 function doPost(e) {
   try {
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     
-    // إعداد عناوين الأعمدة وتنسيق الجدول التلقائي إذا كان فارغاً
+    // Setup header on first run
     if (sheet.getLastRow() === 0) {
       sheet.appendRow([
-        "التاريخ والوقت\nTimestamp",
-        "اسم المشارك\nParticipant Name",
-        "العمر\nAge",
-        "الجنس\nGender",
-        "المحاولة\nAttempt",
-        "صورة إناث عرب\nArab Female",
-        "صورة ذكور عرب\nArab Male",
-        "صورة ذكور صينيين\nChinese Male",
-        "صورة إناث صينيات\nChinese Female",
-        "روابط الصور المباشرة (عالية الدقة)\nDirect Image Links",
-        "وقت البدء والانتهاء\nDuration",
-        "إجمالي القرارات\nDecisions"
+        "التاريخ والوقت",
+        "اسم المشارك",
+        "العمر",
+        "الجنس",
+        "المحاولة",
+        "صورة إناث عرب",
+        "صورة ذكور عرب",
+        "صورة ذكور صينيين",
+        "صورة إناث صينيات",
+        "روابط الصور المباشرة",
+        "وقت البدء والانتهاء",
+        "إجمالي القرارات"
       ]);
       
-      // تنسيق السطر الأول كعنوان جذاب
       var headerRange = sheet.getRange(1, 1, 1, 12);
       headerRange.setFontWeight("bold")
                  .setBackground("#1e293b")
@@ -46,19 +27,18 @@ function doPost(e) {
                  .setVerticalAlignment("middle");
       sheet.setRowHeight(1, 45);
       
-      // تعيين عرض مناسب للأعمدة لعرض الصور بوضوح
-      sheet.setColumnWidth(1, 160); // Timestamp
-      sheet.setColumnWidth(2, 160); // Name
-      sheet.setColumnWidth(3, 70);  // Age
-      sheet.setColumnWidth(4, 80);  // Gender
-      sheet.setColumnWidth(5, 70);  // Attempt
-      sheet.setColumnWidth(6, 110); // Arab Female Image
-      sheet.setColumnWidth(7, 110); // Arab Male Image
-      sheet.setColumnWidth(8, 110); // Chinese Male Image
-      sheet.setColumnWidth(9, 110); // Chinese Female Image
-      sheet.setColumnWidth(10, 240); // Direct Links
-      sheet.setColumnWidth(11, 160); // Duration
-      sheet.setColumnWidth(12, 90);  // Total Decisions
+      sheet.setColumnWidth(1, 160);
+      sheet.setColumnWidth(2, 160);
+      sheet.setColumnWidth(3, 70);
+      sheet.setColumnWidth(4, 80);
+      sheet.setColumnWidth(5, 70);
+      sheet.setColumnWidth(6, 110);
+      sheet.setColumnWidth(7, 110);
+      sheet.setColumnWidth(8, 110);
+      sheet.setColumnWidth(9, 110);
+      sheet.setColumnWidth(10, 240);
+      sheet.setColumnWidth(11, 160);
+      sheet.setColumnWidth(12, 90);
     }
 
     var data = JSON.parse(e.postData.contents);
@@ -74,7 +54,6 @@ function doPost(e) {
     var cmUrl = cmNum ? (rawBase + "/chinese_male/" + cmNum + ".jpg") : "";
     var cfUrl = cfNum ? (rawBase + "/chinese_female/" + cfNum + ".jpg") : "";
 
-    // استخدام صيغة =IMAGE لعرض الصورة مباشرة داخل الخلية في إكسل
     var afCell = afUrl ? ('=IMAGE("' + afUrl + '", 1)') : "N/A";
     var amCell = amUrl ? ('=IMAGE("' + amUrl + '", 1)') : "N/A";
     var cmCell = cmUrl ? ('=IMAGE("' + cmUrl + '", 1)') : "N/A";
@@ -91,7 +70,6 @@ function doPost(e) {
     var endTimeStr = data.endTime ? new Date(data.endTime).toLocaleTimeString() : "";
     var durationStr = (startTimeStr && endTimeStr) ? (startTimeStr + " ➔ " + endTimeStr) : (startTimeStr || "N/A");
 
-    // إضافة سطر الإجابة
     sheet.appendRow([
       new Date().toLocaleString("en-US", { timeZone: "Asia/Riyadh" }),
       data.participantName || data.participantId || "Anonymous",
@@ -107,11 +85,8 @@ function doPost(e) {
       data.totalDecisions || 124
     ]);
 
-    // تكبير ارتفاع سطر النتائج لتظهر الصور المصغرة بحجم واضح
     var newRow = sheet.getLastRow();
     sheet.setRowHeight(newRow, 90);
-    
-    // محاذاة النص في منتصف الخلية
     sheet.getRange(newRow, 1, 1, 12).setVerticalAlignment("middle").setHorizontalAlignment("center");
 
     return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Response recorded with images" }))
