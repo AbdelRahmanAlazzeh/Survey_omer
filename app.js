@@ -7,7 +7,6 @@
  * - Resilient Session Recovery on Page Reload / Accidental Refresh
  * - Same-User Re-take Survey Support with Deduplicated Data Versioning
  * - Mandatory Full Name & Age Validation
- * - Secure PIN-Protected Admin Dashboard & 1-Click All-Data Export
  * - Google Sheets Realtime Webhook Integration & CSV/JSON Export
  */
 
@@ -40,7 +39,6 @@ const state = {
   isProcessingDecision: false,
   isSurveyActive: false,
   isSurveyCompleted: false,
-  isAdminAuthenticated: false,
   language: 'ar',
   theme: 'dark'
 };
@@ -170,11 +168,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initEventListeners();
   initTheme();
   checkSavedSession();
-
-  // Check if URL has ?admin to auto-open admin login
-  if (window.location.search.includes('admin')) {
-    setTimeout(() => openAdminModal(), 400);
-  }
 });
 
 /**
@@ -190,16 +183,9 @@ function initEventListeners() {
   window.addEventListener('keydown', handleKeyNavigation);
 
   window.addEventListener('keydown', (e) => {
-    // Escape closes modals
     if (e.key === 'Escape') {
       closeZoom();
       closeCategoryGallery();
-      closeAdminModal();
-    }
-    // Ctrl + Shift + A opens Admin Login
-    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
-      e.preventDefault();
-      openAdminModal();
     }
   });
 
@@ -217,10 +203,8 @@ function initEventListeners() {
 function handleKeyNavigation(e) {
   const arenaScreen = document.getElementById('screen-arena');
   const galleryModal = document.getElementById('gallery-modal');
-  const adminModal = document.getElementById('admin-modal');
   if (!arenaScreen || !arenaScreen.classList.contains('active') || state.isProcessingDecision) return;
   if (galleryModal && galleryModal.classList.contains('active')) return;
-  if (adminModal && adminModal.classList.contains('active')) return;
 
   if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
 
@@ -449,18 +433,14 @@ function loadCurrentRound() {
 
   const category = SURVEY_CONFIG.categories[state.currentCategoryIndex];
 
-  // Update Status Bar
   updateStatusBar();
 
-  // Elements
   const imgA = document.getElementById('img-candidate-a');
   const imgB = document.getElementById('img-candidate-b');
 
-  // Set images with border-safe image loader
   setImageSource(imgA, category, state.currentChampionNumber);
   setImageSource(imgB, category, state.currentChallengerNumber);
 
-  // Smooth animation entry
   const cardA = document.getElementById('card-candidate-a');
   const cardB = document.getElementById('card-candidate-b');
   
@@ -561,7 +541,6 @@ function selectWinner(choice) {
     timestamp: new Date().toISOString()
   });
 
-  // Card highlight pulse animation
   const chosenCard = choice === 'left' ? document.getElementById('card-candidate-a') : document.getElementById('card-candidate-b');
   if (chosenCard) {
     chosenCard.classList.add('card-selected');
@@ -570,10 +549,8 @@ function selectWinner(choice) {
   setTimeout(() => {
     if (chosenCard) chosenCard.classList.remove('card-selected');
 
-    // King of the Hill Update
     state.currentChampionNumber = chosenNumber;
 
-    // Check if category complete
     if (state.currentRoundNumber >= category.totalImages - 1) {
       state.winners.push({
         categoryId: category.id,
@@ -655,7 +632,6 @@ function electGalleryImage(imageNumber) {
 
   state.currentChampionNumber = imageNumber;
 
-  // Log direct election in history
   state.history.push({
     participantId: state.participant.id,
     participantName: state.participant.name,
@@ -720,10 +696,8 @@ function finishSurvey() {
 
   document.getElementById('survey-status-bar').classList.remove('active');
   
-  // Show Results Screen
   showScreen('screen-results');
 
-  // Render Participant Summary
   const pTag = document.getElementById('participant-summary-tag');
   if (pTag) {
     pTag.textContent = I18N[state.language].participantSummary(
@@ -733,10 +707,7 @@ function finishSurvey() {
     );
   }
 
-  // Render 4 Winners
   renderWinnersGrid();
-
-  // Submit Data to Google Sheets Webhook and Local Storage without redundancy
   submitSurveyData();
 }
 
@@ -780,7 +751,7 @@ function renderWinnersGrid() {
 }
 
 /**
- * Submit survey data to Google Sheets / Webhook & Deduplicate in Local Storage
+ * Submit survey data to Google Sheets / Webhook
  */
 async function submitSurveyData() {
   const statusBox = document.getElementById('submission-status');
@@ -809,25 +780,6 @@ async function submitSurveyData() {
     detailedHistory: state.history
   };
 
-  // Structured, non-redundant Local Storage handling
-  try {
-    const existingList = JSON.parse(localStorage.getItem('SURVEY_RESPONSES') || '[]');
-    
-    const index = existingList.findIndex(
-      r => r.participantId === state.participant.id && r.attemptNumber === currentAttempt
-    );
-
-    if (index >= 0) {
-      existingList[index] = payload;
-    } else {
-      existingList.push(payload);
-    }
-
-    localStorage.setItem('SURVEY_RESPONSES', JSON.stringify(existingList));
-  } catch (e) {
-    console.warn('LocalStorage save error:', e);
-  }
-
   const webhookUrl = SURVEY_CONFIG.googleSheetWebhookUrl;
 
   if (!webhookUrl) {
@@ -855,156 +807,6 @@ async function submitSurveyData() {
     console.error('Submission error:', err);
     statusBox.className = 'submit-status-box status-fallback';
     statusText.textContent = I18N[lang].statusLocalOnly;
-  }
-}
-
-/**
- * ==========================================================================
- * SECURE PIN-PROTECTED ADMIN DASHBOARD
- * ==========================================================================
- */
-let secretAdminClickCount = 0;
-let secretAdminClickTimer = null;
-
-function handleSecretAdminClick() {
-  secretAdminClickCount += 1;
-  clearTimeout(secretAdminClickTimer);
-  secretAdminClickTimer = setTimeout(() => {
-    secretAdminClickCount = 0;
-  }, 2500);
-
-  if (secretAdminClickCount >= 4) {
-    secretAdminClickCount = 0;
-    openAdminModal();
-  }
-}
-
-function openAdminModal() {
-  const modal = document.getElementById('admin-modal');
-  const gate = document.getElementById('admin-auth-gate');
-  const content = document.getElementById('admin-protected-content');
-  const pinInput = document.getElementById('admin-pin-input');
-  const pinError = document.getElementById('admin-pin-error');
-
-  if (pinInput) pinInput.value = '';
-  if (pinError) pinError.style.display = 'none';
-
-  if (state.isAdminAuthenticated) {
-    if (gate) gate.style.display = 'none';
-    if (content) content.style.display = 'flex';
-    renderAdminTable();
-  } else {
-    if (gate) gate.style.display = 'block';
-    if (content) content.style.display = 'none';
-    setTimeout(() => { if (pinInput) pinInput.focus(); }, 150);
-  }
-
-  if (modal) modal.classList.add('active');
-}
-
-function closeAdminModal() {
-  const modal = document.getElementById('admin-modal');
-  if (modal) modal.classList.remove('active');
-}
-
-function verifyAdminPin() {
-  const pinInput = document.getElementById('admin-pin-input');
-  const pinError = document.getElementById('admin-pin-error');
-  const gate = document.getElementById('admin-auth-gate');
-  const content = document.getElementById('admin-protected-content');
-
-  const enteredPin = (pinInput ? pinInput.value : '').trim();
-  const correctPin = (SURVEY_CONFIG.adminPin || '2026').trim();
-
-  if (enteredPin === correctPin) {
-    state.isAdminAuthenticated = true;
-    if (pinError) pinError.style.display = 'none';
-    if (gate) gate.style.display = 'none';
-    if (content) content.style.display = 'flex';
-    renderAdminTable();
-  } else {
-    if (pinError) pinError.style.display = 'block';
-    if (pinInput) {
-      pinInput.value = '';
-      pinInput.focus();
-    }
-  }
-}
-
-function renderAdminTable() {
-  const tbody = document.getElementById('admin-table-body');
-  const countEl = document.getElementById('admin-stats-count');
-  if (!tbody) return;
-
-  const responses = JSON.parse(localStorage.getItem('SURVEY_RESPONSES') || '[]');
-  countEl.innerHTML = `إجمالي المشاركات المسجلة: <strong>${responses.length}</strong>`;
-
-  if (responses.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 2rem;">
-          لا توجد استجابات مسجلة حتى الآن على هذا المتصفح.
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  tbody.innerHTML = '';
-  responses.forEach((r, idx) => {
-    const tr = document.createElement('tr');
-    const timeStr = r.endTime ? new Date(r.endTime).toLocaleString() : 'N/A';
-
-    tr.innerHTML = `
-      <td>${idx + 1}</td>
-      <td><strong>${r.participantName || 'Anonymous'}</strong></td>
-      <td>${r.participantAge || 'N/A'}</td>
-      <td>${r.gender || 'N/A'}</td>
-      <td><span class="badge-attempt">#${r.attemptNumber || 1}</span></td>
-      <td><span class="badge-winner win-pink">صورة ${r.winnerArabFemale || '-'}</span></td>
-      <td><span class="badge-winner win-blue">صورة ${r.winnerArabMale || '-'}</span></td>
-      <td><span class="badge-winner win-purple">صورة ${r.winnerChineseMale || '-'}</span></td>
-      <td><span class="badge-winner win-green">صورة ${r.winnerChineseFemale || '-'}</span></td>
-      <td style="font-size: 0.78rem; color: var(--text-muted);">${timeStr}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-function exportAllParticipantsCSV() {
-  const responses = JSON.parse(localStorage.getItem('SURVEY_RESPONSES') || '[]');
-  if (responses.length === 0) {
-    alert('لا توجد بيانات مسجلة لتصديرها.');
-    return;
-  }
-
-  let csv = "\uFEFF"; // UTF-8 BOM
-  csv += "Record #,Participant Name,Age,Gender,Attempt #,Arab Female Winner,Arab Male Winner,Chinese Male Winner,Chinese Female Winner,Start Time,End Time,Total Decisions\n";
-
-  responses.forEach((r, idx) => {
-    csv += [
-      idx + 1,
-      `"${r.participantName || ''}"`,
-      `"${r.participantAge || ''}"`,
-      `"${r.gender || ''}"`,
-      `"${r.attemptNumber || 1}"`,
-      `"${r.winnerArabFemale || ''}"`,
-      `"${r.winnerArabMale || ''}"`,
-      `"${r.winnerChineseMale || ''}"`,
-      `"${r.winnerChineseFemale || ''}"`,
-      `"${r.startTime || ''}"`,
-      `"${r.endTime || ''}"`,
-      `"${r.totalDecisions || ''}"`
-    ].join(",") + "\n";
-  });
-
-  downloadFile(csv, `ALL_SURVEY_PARTICIPANTS_${new Date().toISOString().slice(0,10)}.csv`, 'text/csv;charset=utf-8;');
-}
-
-function clearAllParticipantData() {
-  if (confirm('هل أنت متأكد من مسح جميع سجلات المشاركين من هذا الجهاز؟ لن يمكن استرجاعها.')) {
-    localStorage.removeItem('SURVEY_RESPONSES');
-    renderAdminTable();
   }
 }
 
@@ -1229,7 +1031,6 @@ function applyLanguageTexts() {
   document.getElementById('btn-csv-text').textContent = t.btnCsv;
   document.getElementById('btn-json-text').textContent = t.btnJson;
 
-  // Re-render winners grid if in results
   if (document.getElementById('screen-results').classList.contains('active')) {
     renderWinnersGrid();
   }
@@ -1282,9 +1083,3 @@ window.discardSavedSession = discardSavedSession;
 window.openCategoryGallery = openCategoryGallery;
 window.closeCategoryGallery = closeCategoryGallery;
 window.electGalleryImage = electGalleryImage;
-window.openAdminModal = openAdminModal;
-window.closeAdminModal = closeAdminModal;
-window.handleSecretAdminClick = handleSecretAdminClick;
-window.verifyAdminPin = verifyAdminPin;
-window.exportAllParticipantsCSV = exportAllParticipantsCSV;
-window.clearAllParticipantData = clearAllParticipantData;

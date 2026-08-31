@@ -21,9 +21,8 @@
   <!-- Top Header Navigation -->
   <header class="header">
     <div class="container header-content">
-      <!-- Secret 4-click on brand icon opens protected Admin Login -->
-      <a href="#" class="brand-logo" onclick="event.preventDefault(); handleSecretAdminClick();">
-        <div class="brand-icon" title="استبيان التفضيل البصري">✨</div>
+      <a href="#" class="brand-logo" onclick="event.preventDefault();">
+        <div class="brand-icon">✨</div>
         <span id="app-title-text">استبيان التفضيل البصري</span>
       </a>
 
@@ -317,74 +316,6 @@
 
     </div>
   </main>
-
-  <!-- ========================================================================
-       PASSWORD-PROTECTED ADMIN DASHBOARD MODAL
-       ======================================================================== -->
-  <div id="admin-modal" class="admin-modal" onclick="closeAdminModal()">
-    <div class="admin-modal-content" onclick="event.stopPropagation()">
-      <div class="admin-modal-header">
-        <div>
-          <h3 id="admin-modal-title">🔒 لوحة المسؤول وسجل المشاركين (Admin Dashboard)</h3>
-          <p id="admin-modal-subtitle">لوحة الإدارة المحمية بكلمة المرور لمراجعة وتصدير البيانات.</p>
-        </div>
-        <button type="button" class="btn-gallery-close" onclick="closeAdminModal()" title="إغلاق">&times;</button>
-      </div>
-
-      <!-- PIN Verification Gate -->
-      <div id="admin-auth-gate" class="admin-auth-gate">
-        <div class="admin-lock-icon">🔐</div>
-        <h4>منطقة محظورة - تسجيل دخول المسؤول</h4>
-        <p>يرجى إدخال رمز المرور السري (PIN Code) للدخول إلى سجل النتائج:</p>
-        <form onsubmit="event.preventDefault(); verifyAdminPin();" style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem;">
-          <input type="password" id="admin-pin-input" class="form-control" placeholder="رمز PIN..." style="max-width: 180px; text-align: center; font-size: 1.1rem; letter-spacing: 4px;" autofocus>
-          <button type="submit" class="btn-primary" style="width: auto; padding: 0 1.25rem;">دخول</button>
-        </form>
-        <div id="admin-pin-error" style="color: #ef4444; font-size: 0.84rem; margin-top: 0.5rem; display: none;">رمز المرور غير صحيح!</div>
-      </div>
-
-      <!-- Protected Admin Content (Shown only after correct PIN) -->
-      <div id="admin-protected-content" class="admin-modal-body" style="display: none;">
-        <div class="admin-toolbar">
-          <div class="admin-stats" id="admin-stats-count">
-            إجمالي المشاركات المسجلة: <strong>0</strong>
-          </div>
-          <div class="admin-actions">
-            <button type="button" class="btn-secondary" onclick="exportAllParticipantsCSV()">
-              <span>📥</span>
-              <span>تصدير كل المشاركين (Excel / CSV)</span>
-            </button>
-            <button type="button" class="btn-discard" onclick="clearAllParticipantData()">
-              <span>🗑️</span>
-              <span>مسح السجل المحلي</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="admin-table-wrapper">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>اسم المشارك</th>
-                <th>العمر</th>
-                <th>الجنس</th>
-                <th>المحاولة</th>
-                <th>فائزة (إناث عرب)</th>
-                <th>فائز (ذكور عرب)</th>
-                <th>فائز (ذكور صينيين)</th>
-                <th>فائزة (إناث صينيات)</th>
-                <th>وقت التسجيل</th>
-              </tr>
-            </thead>
-            <tbody id="admin-table-body">
-              <!-- Rendered via JS -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- ========================================================================
        EXPLORE ALL CATEGORY IMAGES GALLERY MODAL
