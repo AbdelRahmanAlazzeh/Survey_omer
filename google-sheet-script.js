@@ -14,7 +14,7 @@ function doPost(e) {
         "صورة ذكور عرب",
         "صورة ذكور صينيين",
         "صورة إناث صينيات",
-        "روابط الصور المباشرة",
+        "🔗 تقرير الويب البصري (نقرة واحدة)",
         "وقت البدء والانتهاء",
         "إجمالي القرارات"
       ]);
@@ -36,35 +36,39 @@ function doPost(e) {
       sheet.setColumnWidth(7, 110);
       sheet.setColumnWidth(8, 110);
       sheet.setColumnWidth(9, 110);
-      sheet.setColumnWidth(10, 240);
+      sheet.setColumnWidth(10, 260);
       sheet.setColumnWidth(11, 160);
       sheet.setColumnWidth(12, 90);
     }
 
     var data = JSON.parse(e.postData.contents);
     var rawBase = "https://raw.githubusercontent.com/AbdelRahmanAlazzeh/Survey_omer/main/assets/images";
+    var pagesBase = "https://abdelrahmanalazzeh.github.io/Survey_omer";
 
     var afNum = data.winnerArabFemale || "";
     var amNum = data.winnerArabMale || "";
     var cmNum = data.winnerChineseMale || "";
     var cfNum = data.winnerChineseFemale || "";
+    var pName = data.participantName || data.participantId || "Anonymous";
+    var pAge = data.participantAge || data.age || "";
 
     var afUrl = afNum ? (rawBase + "/arab_female/" + afNum + ".jpg") : "";
     var amUrl = amNum ? (rawBase + "/arab_male/" + amNum + ".jpg") : "";
     var cmUrl = cmNum ? (rawBase + "/chinese_male/" + cmNum + ".jpg") : "";
     var cfUrl = cfNum ? (rawBase + "/chinese_female/" + cfNum + ".jpg") : "";
 
+    // إدراج الصور المصغرة داخل خلايا الإكسل
     var afCell = afUrl ? ('=IMAGE("' + afUrl + '", 1)') : "N/A";
     var amCell = amUrl ? ('=IMAGE("' + amUrl + '", 1)') : "N/A";
     var cmCell = cmUrl ? ('=IMAGE("' + cmUrl + '", 1)') : "N/A";
     var cfCell = cfUrl ? ('=IMAGE("' + cfUrl + '", 1)') : "N/A";
 
-    var linksText = [
-      afNum ? ("إناث عرب #" + afNum + ": " + afUrl) : "",
-      amNum ? ("ذكور عرب #" + amNum + ": " + amUrl) : "",
-      cmNum ? ("ذكور صينيين #" + cmNum + ": " + cmUrl) : "",
-      cfNum ? ("إناث صينيات #" + cfNum + ": " + cfUrl) : ""
-    ].filter(Boolean).join("\n");
+    // رابط مباشر لفتح التقرير البصري التفاعلي بكامل الصور
+    var reportUrl = pagesBase + "/results-viewer.html?name=" + encodeURIComponent(pName) + 
+                    "&age=" + encodeURIComponent(pAge) + 
+                    "&af=" + afNum + "&am=" + amNum + "&cm=" + cmNum + "&cf=" + cfNum;
+    
+    var reportLinkCell = '=HYPERLINK("' + reportUrl + '", "🖼️ فتح التقرير البصري للنتائج")';
 
     var startTimeStr = data.startTime ? new Date(data.startTime).toLocaleTimeString() : "";
     var endTimeStr = data.endTime ? new Date(data.endTime).toLocaleTimeString() : "";
@@ -72,15 +76,15 @@ function doPost(e) {
 
     sheet.appendRow([
       new Date().toLocaleString("en-US", { timeZone: "Asia/Riyadh" }),
-      data.participantName || data.participantId || "Anonymous",
-      data.participantAge || data.age || "N/A",
+      pName,
+      pAge || "N/A",
       data.gender || "N/A",
       "#" + (data.attemptNumber || 1),
       afCell,
       amCell,
       cmCell,
       cfCell,
-      linksText,
+      reportLinkCell,
       durationStr,
       data.totalDecisions || 124
     ]);
