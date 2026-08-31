@@ -2,21 +2,21 @@ function doPost(e) {
   try {
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     
-    // Setup header on first run
+    // إعداد الترويسة إذا كان الجدول فارغاً
     if (sheet.getLastRow() === 0) {
       sheet.appendRow([
         "التاريخ والوقت",
         "اسم المشارك",
-        "العمر",
         "الجنس",
-        "المحاولة",
-        "صورة إناث عرب",
-        "صورة ذكور عرب",
-        "صورة ذكور صينيين",
-        "صورة إناث صينيات",
-        "🔗 تقرير الويب البصري (نقرة واحدة)",
-        "وقت البدء والانتهاء",
-        "إجمالي القرارات"
+        "العمر",
+        "Arab Female Winner (إناث عرب)",
+        "Arab Male Winner (ذكور عرب)",
+        "Chinese Male Winner (ذكور صينيين)",
+        "Chinese Female Winner (إناث صينيات)",
+        "Start Time",
+        "End Time",
+        "Total Decisions",
+        "المحاولة (Attempt)"
       ]);
       
       var headerRange = sheet.getRange(1, 1, 1, 12);
@@ -27,66 +27,53 @@ function doPost(e) {
                  .setVerticalAlignment("middle");
       sheet.setRowHeight(1, 45);
       
-      sheet.setColumnWidth(1, 160);
-      sheet.setColumnWidth(2, 160);
-      sheet.setColumnWidth(3, 70);
-      sheet.setColumnWidth(4, 80);
-      sheet.setColumnWidth(5, 70);
-      sheet.setColumnWidth(6, 110);
-      sheet.setColumnWidth(7, 110);
-      sheet.setColumnWidth(8, 110);
-      sheet.setColumnWidth(9, 110);
-      sheet.setColumnWidth(10, 260);
-      sheet.setColumnWidth(11, 160);
-      sheet.setColumnWidth(12, 90);
+      sheet.setColumnWidth(1, 160); // Timestamp
+      sheet.setColumnWidth(2, 160); // Name
+      sheet.setColumnWidth(3, 80);  // Gender
+      sheet.setColumnWidth(4, 70);  // Age
+      sheet.setColumnWidth(5, 110); // Arab Female Image
+      sheet.setColumnWidth(6, 110); // Arab Male Image
+      sheet.setColumnWidth(7, 110); // Chinese Male Image
+      sheet.setColumnWidth(8, 110); // Chinese Female Image
+      sheet.setColumnWidth(9, 160); // Start Time
+      sheet.setColumnWidth(10, 160); // End Time
+      sheet.setColumnWidth(11, 90);  // Decisions
+      sheet.setColumnWidth(12, 80);  // Attempt
     }
 
     var data = JSON.parse(e.postData.contents);
     var rawBase = "https://raw.githubusercontent.com/AbdelRahmanAlazzeh/Survey_omer/main/assets/images";
-    var pagesBase = "https://abdelrahmanalazzeh.github.io/Survey_omer";
 
     var afNum = data.winnerArabFemale || "";
     var amNum = data.winnerArabMale || "";
     var cmNum = data.winnerChineseMale || "";
     var cfNum = data.winnerChineseFemale || "";
-    var pName = data.participantName || data.participantId || "Anonymous";
-    var pAge = data.participantAge || data.age || "";
 
     var afUrl = afNum ? (rawBase + "/arab_female/" + afNum + ".jpg") : "";
     var amUrl = amNum ? (rawBase + "/arab_male/" + amNum + ".jpg") : "";
     var cmUrl = cmNum ? (rawBase + "/chinese_male/" + cmNum + ".jpg") : "";
     var cfUrl = cfNum ? (rawBase + "/chinese_female/" + cfNum + ".jpg") : "";
 
-    // إدراج الصور المصغرة داخل خلايا الإكسل
+    // إدراج الصور المصغرة داخل خلايا الجدول مباشرة
     var afCell = afUrl ? ('=IMAGE("' + afUrl + '", 1)') : "N/A";
     var amCell = amUrl ? ('=IMAGE("' + amUrl + '", 1)') : "N/A";
     var cmCell = cmUrl ? ('=IMAGE("' + cmUrl + '", 1)') : "N/A";
     var cfCell = cfUrl ? ('=IMAGE("' + cfUrl + '", 1)') : "N/A";
 
-    // رابط مباشر لفتح التقرير البصري التفاعلي بكامل الصور
-    var reportUrl = pagesBase + "/results-viewer.html?name=" + encodeURIComponent(pName) + 
-                    "&age=" + encodeURIComponent(pAge) + 
-                    "&af=" + afNum + "&am=" + amNum + "&cm=" + cmNum + "&cf=" + cfNum;
-    
-    var reportLinkCell = '=HYPERLINK("' + reportUrl + '", "🖼️ فتح التقرير البصري للنتائج")';
-
-    var startTimeStr = data.startTime ? new Date(data.startTime).toLocaleTimeString() : "";
-    var endTimeStr = data.endTime ? new Date(data.endTime).toLocaleTimeString() : "";
-    var durationStr = (startTimeStr && endTimeStr) ? (startTimeStr + " ➔ " + endTimeStr) : (startTimeStr || "N/A");
-
+    // إضافة سطر الإجابة متطابقاً تماماً مع عناوين الأعمدة (12 عمود)
     sheet.appendRow([
-      new Date().toLocaleString("en-US", { timeZone: "Asia/Riyadh" }),
-      pName,
-      pAge || "N/A",
-      data.gender || "N/A",
-      "#" + (data.attemptNumber || 1),
-      afCell,
-      amCell,
-      cmCell,
-      cfCell,
-      reportLinkCell,
-      durationStr,
-      data.totalDecisions || 124
+      new Date().toLocaleString("en-US", { timeZone: "Asia/Riyadh" }), // Col 1: Timestamp
+      data.participantName || data.participantId || "Anonymous",       // Col 2: Name
+      data.gender || "N/A",                                           // Col 3: Gender
+      data.participantAge || data.age || "N/A",                       // Col 4: Age
+      afCell,                                                         // Col 5: Arab Female Winner
+      amCell,                                                         // Col 6: Arab Male Winner
+      cmCell,                                                         // Col 7: Chinese Male Winner
+      cfCell,                                                         // Col 8: Chinese Female Winner
+      data.startTime || "",                                           // Col 9: Start Time
+      data.endTime || "",                                             // Col 10: End Time
+      data.totalDecisions || 124,                                     // Col 11: Total Decisions
+      "#" + (data.attemptNumber || 1)                                  // Col 12: Attempt
     ]);
 
     var newRow = sheet.getLastRow();
