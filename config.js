@@ -26,8 +26,8 @@ const SURVEY_CONFIG = {
       descEn: "Select the preferred image in each round until the final champion is determined.",
       folder: "assets/images/arab_female",
       badgeColor: "#ec4899", // وردي
-      totalImages: 32,
-      aspectRatioType: "landscape" // 3:2
+      totalImages: 42,
+      aspectRatioType: "portrait" // 3:2
     },
     {
       id: "arab_male",
@@ -37,8 +37,8 @@ const SURVEY_CONFIG = {
       descEn: "Select the preferred image in each round until the final champion is determined.",
       folder: "assets/images/arab_male",
       badgeColor: "#3b82f6", // أزرق
-      totalImages: 36,
-      aspectRatioType: "landscape" // 3:2
+      totalImages: 18,
+      aspectRatioType: "portrait" // 3:2
     },
     {
       id: "chinese_male",
@@ -48,8 +48,8 @@ const SURVEY_CONFIG = {
       descEn: "Select the preferred image in each round until the final champion is determined.",
       folder: "assets/images/chinese_male",
       badgeColor: "#8b5cf6", // بنفسجي
-      totalImages: 18,
-      aspectRatioType: "portrait" // 4:5
+      totalImages: 36,
+      aspectRatioType: "landscape" // 4:5
     },
     {
       id: "chinese_female",
@@ -59,8 +59,8 @@ const SURVEY_CONFIG = {
       descEn: "Select the preferred image in each round until the final champion is determined.",
       folder: "assets/images/chinese_female",
       badgeColor: "#10b981", // زمردي
-      totalImages: 42,
-      aspectRatioType: "portrait" // 4:5
+      totalImages: 32,
+      aspectRatioType: "landscape" // 4:5
     }
   ],
 
