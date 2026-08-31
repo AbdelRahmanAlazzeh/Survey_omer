@@ -1608,3 +1608,31 @@ body[dir="ltr"] .admin-table {
   color: #10b981;
 }
 
+.admin-auth-gate {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  margin: 1.5rem auto;
+  max-width: 440px;
+  border: 1px solid var(--border-color);
+}
+
+.admin-lock-icon {
+  font-size: 2.8rem;
+  margin-bottom: 0.75rem;
+}
+
+.admin-auth-gate h4 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin-bottom: 0.35rem;
+  color: var(--text-primary);
+}
+
+.admin-auth-gate p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+

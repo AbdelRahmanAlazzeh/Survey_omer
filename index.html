@@ -21,18 +21,13 @@
   <!-- Top Header Navigation -->
   <header class="header">
     <div class="container header-content">
-      <a href="#" class="brand-logo" onclick="event.preventDefault();">
-        <div class="brand-icon">✨</div>
+      <!-- Secret 4-click on brand icon opens protected Admin Login -->
+      <a href="#" class="brand-logo" onclick="event.preventDefault(); handleSecretAdminClick();">
+        <div class="brand-icon" title="استبيان التفضيل البصري">✨</div>
         <span id="app-title-text">استبيان التفضيل البصري</span>
       </a>
 
       <div class="header-controls">
-        <!-- Admin Dashboard Button -->
-        <button id="btn-open-admin" class="admin-nav-btn" onclick="openAdminModal()" title="لوحة نتائج المشاركين (للمسؤول)" type="button">
-          <span>📊</span>
-          <span id="lbl-admin-btn">سجل المشاركات</span>
-        </button>
-
         <!-- Language Switcher -->
         <button id="btn-toggle-lang" class="lang-toggle-btn" title="تغيير اللغة / Switch Language" type="button">
           <span class="lang-icon">🌐</span>
@@ -324,22 +319,35 @@
   </main>
 
   <!-- ========================================================================
-       ADMIN DASHBOARD MODAL (FOR VIEWING ALL PARTICIPANT RESPONSES)
+       PASSWORD-PROTECTED ADMIN DASHBOARD MODAL
        ======================================================================== -->
   <div id="admin-modal" class="admin-modal" onclick="closeAdminModal()">
     <div class="admin-modal-content" onclick="event.stopPropagation()">
       <div class="admin-modal-header">
         <div>
-          <h3 id="admin-modal-title">📊 لوحة سجل المشاركين والنتائج (Admin View)</h3>
-          <p id="admin-modal-subtitle">استعراض كافة نتائج وتفضيلات المشاركين المسجلة محلياً مع خيار التصدير الكامل.</p>
+          <h3 id="admin-modal-title">🔒 لوحة المسؤول وسجل المشاركين (Admin Dashboard)</h3>
+          <p id="admin-modal-subtitle">لوحة الإدارة المحمية بكلمة المرور لمراجعة وتصدير البيانات.</p>
         </div>
         <button type="button" class="btn-gallery-close" onclick="closeAdminModal()" title="إغلاق">&times;</button>
       </div>
 
-      <div class="admin-modal-body">
+      <!-- PIN Verification Gate -->
+      <div id="admin-auth-gate" class="admin-auth-gate">
+        <div class="admin-lock-icon">🔐</div>
+        <h4>منطقة محظورة - تسجيل دخول المسؤول</h4>
+        <p>يرجى إدخال رمز المرور السري (PIN Code) للدخول إلى سجل النتائج:</p>
+        <form onsubmit="event.preventDefault(); verifyAdminPin();" style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem;">
+          <input type="password" id="admin-pin-input" class="form-control" placeholder="رمز PIN..." style="max-width: 180px; text-align: center; font-size: 1.1rem; letter-spacing: 4px;" autofocus>
+          <button type="submit" class="btn-primary" style="width: auto; padding: 0 1.25rem;">دخول</button>
+        </form>
+        <div id="admin-pin-error" style="color: #ef4444; font-size: 0.84rem; margin-top: 0.5rem; display: none;">رمز المرور غير صحيح!</div>
+      </div>
+
+      <!-- Protected Admin Content (Shown only after correct PIN) -->
+      <div id="admin-protected-content" class="admin-modal-body" style="display: none;">
         <div class="admin-toolbar">
           <div class="admin-stats" id="admin-stats-count">
-            إجمالي المشاركات: <strong>0</strong>
+            إجمالي المشاركات المسجلة: <strong>0</strong>
           </div>
           <div class="admin-actions">
             <button type="button" class="btn-secondary" onclick="exportAllParticipantsCSV()">

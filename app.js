@@ -7,7 +7,7 @@
  * - Resilient Session Recovery on Page Reload / Accidental Refresh
  * - Same-User Re-take Survey Support with Deduplicated Data Versioning
  * - Mandatory Full Name & Age Validation
- * - Non-Technical Admin Dashboard with Live Response Browser & 1-Click All-Data Export
+ * - Secure PIN-Protected Admin Dashboard & 1-Click All-Data Export
  * - Google Sheets Realtime Webhook Integration & CSV/JSON Export
  */
 
@@ -40,6 +40,7 @@ const state = {
   isProcessingDecision: false,
   isSurveyActive: false,
   isSurveyCompleted: false,
+  isAdminAuthenticated: false,
   language: 'ar',
   theme: 'dark'
 };
@@ -49,7 +50,6 @@ const I18N = {
   ar: {
     appTitle: "استبيان التفضيل البصري",
     btnLang: "English",
-    lblAdminBtn: "سجل المشاركات",
     welcomeHeading: "استبيان التفضيل والمفاضلة البصرية",
     welcomeSubtext: "نرحب بمشاركتك الكريمة. يهدف هذا البحث إلى دراسة التفضيلات البصرية عبر 4 مجموعات مختلفة من الصور بنظام المقارنة المباشرة.",
     inst1Title: "مقارنة زوجية",
@@ -108,7 +108,6 @@ const I18N = {
   en: {
     appTitle: "Visual Preference Survey",
     btnLang: "العربية",
-    lblAdminBtn: "Records",
     welcomeHeading: "Visual Face Preference Survey",
     welcomeSubtext: "Welcome. This research study evaluates visual preferences across 4 distinct image groups through direct pairwise comparisons.",
     inst1Title: "Pairwise Comparison",
@@ -171,6 +170,11 @@ document.addEventListener('DOMContentLoaded', () => {
   initEventListeners();
   initTheme();
   checkSavedSession();
+
+  // Check if URL has ?admin to auto-open admin login
+  if (window.location.search.includes('admin')) {
+    setTimeout(() => openAdminModal(), 400);
+  }
 });
 
 /**
@@ -186,10 +190,16 @@ function initEventListeners() {
   window.addEventListener('keydown', handleKeyNavigation);
 
   window.addEventListener('keydown', (e) => {
+    // Escape closes modals
     if (e.key === 'Escape') {
       closeZoom();
       closeCategoryGallery();
       closeAdminModal();
+    }
+    // Ctrl + Shift + A opens Admin Login
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+      e.preventDefault();
+      openAdminModal();
     }
   });
 
@@ -850,18 +860,75 @@ async function submitSurveyData() {
 
 /**
  * ==========================================================================
- * ADMIN DASHBOARD & LOCAL RESPONSE BROWSER
+ * SECURE PIN-PROTECTED ADMIN DASHBOARD
  * ==========================================================================
  */
+let secretAdminClickCount = 0;
+let secretAdminClickTimer = null;
+
+function handleSecretAdminClick() {
+  secretAdminClickCount += 1;
+  clearTimeout(secretAdminClickTimer);
+  secretAdminClickTimer = setTimeout(() => {
+    secretAdminClickCount = 0;
+  }, 2500);
+
+  if (secretAdminClickCount >= 4) {
+    secretAdminClickCount = 0;
+    openAdminModal();
+  }
+}
+
 function openAdminModal() {
   const modal = document.getElementById('admin-modal');
-  renderAdminTable();
+  const gate = document.getElementById('admin-auth-gate');
+  const content = document.getElementById('admin-protected-content');
+  const pinInput = document.getElementById('admin-pin-input');
+  const pinError = document.getElementById('admin-pin-error');
+
+  if (pinInput) pinInput.value = '';
+  if (pinError) pinError.style.display = 'none';
+
+  if (state.isAdminAuthenticated) {
+    if (gate) gate.style.display = 'none';
+    if (content) content.style.display = 'flex';
+    renderAdminTable();
+  } else {
+    if (gate) gate.style.display = 'block';
+    if (content) content.style.display = 'none';
+    setTimeout(() => { if (pinInput) pinInput.focus(); }, 150);
+  }
+
   if (modal) modal.classList.add('active');
 }
 
 function closeAdminModal() {
   const modal = document.getElementById('admin-modal');
   if (modal) modal.classList.remove('active');
+}
+
+function verifyAdminPin() {
+  const pinInput = document.getElementById('admin-pin-input');
+  const pinError = document.getElementById('admin-pin-error');
+  const gate = document.getElementById('admin-auth-gate');
+  const content = document.getElementById('admin-protected-content');
+
+  const enteredPin = (pinInput ? pinInput.value : '').trim();
+  const correctPin = (SURVEY_CONFIG.adminPin || '2026').trim();
+
+  if (enteredPin === correctPin) {
+    state.isAdminAuthenticated = true;
+    if (pinError) pinError.style.display = 'none';
+    if (gate) gate.style.display = 'none';
+    if (content) content.style.display = 'flex';
+    renderAdminTable();
+  } else {
+    if (pinError) pinError.style.display = 'block';
+    if (pinInput) {
+      pinInput.value = '';
+      pinInput.focus();
+    }
+  }
 }
 
 function renderAdminTable() {
@@ -1054,7 +1121,6 @@ function updateStatusBar() {
   const cat = SURVEY_CONFIG.categories[state.currentCategoryIndex];
   const lang = state.language;
 
-  // Title
   const catTitle = lang === 'ar' ? cat.titleAr : cat.titleEn;
   document.getElementById('cat-title').textContent = I18N[lang].catBadgePrefix + catTitle;
   document.getElementById('cat-progress-text').textContent = I18N[lang].catProgress(
@@ -1062,12 +1128,10 @@ function updateStatusBar() {
     SURVEY_CONFIG.categories.length
   );
 
-  // Rounds
   const totalRoundsInCat = cat.totalImages - 1;
   document.getElementById('round-number-text').textContent = state.currentRoundNumber;
   document.getElementById('total-rounds-text').textContent = totalRoundsInCat;
 
-  // Total Progress Percentage
   const totalSurveyComparisons = SURVEY_CONFIG.categories.reduce((acc, c) => acc + (c.totalImages - 1), 0);
   
   let currentTotalProgress = 0;
@@ -1113,9 +1177,6 @@ function applyLanguageTexts() {
   document.getElementById('app-title-text').textContent = t.appTitle;
   const langLabel = document.querySelector('.lang-label');
   if (langLabel) langLabel.textContent = t.btnLang;
-
-  const adminBtnLbl = document.getElementById('lbl-admin-btn');
-  if (adminBtnLbl) adminBtnLbl.textContent = t.lblAdminBtn;
 
   // Welcome Screen
   document.getElementById('welcome-heading').textContent = t.welcomeHeading;
@@ -1223,5 +1284,7 @@ window.closeCategoryGallery = closeCategoryGallery;
 window.electGalleryImage = electGalleryImage;
 window.openAdminModal = openAdminModal;
 window.closeAdminModal = closeAdminModal;
+window.handleSecretAdminClick = handleSecretAdminClick;
+window.verifyAdminPin = verifyAdminPin;
 window.exportAllParticipantsCSV = exportAllParticipantsCSV;
 window.clearAllParticipantData = clearAllParticipantData;

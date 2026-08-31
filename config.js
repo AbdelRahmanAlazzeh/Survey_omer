@@ -16,6 +16,9 @@ const SURVEY_CONFIG = {
   // رابط Google Apps Script Webhook لاستقبال البيانات في Google Sheets
   googleSheetWebhookUrl: "https://script.google.com/macros/s/AKfycbzfksdMmWwYL2FrwtCJglXINhmtRVg05i9-Y1Ul78crM7UBriyx7FgnUSNlVgiK19b3/exec",
 
+  // رمز المرور السري للوحة الإدارة (Admin PIN)
+  adminPin: "2026",
+
   // الفئات الأربعة مع عدد الصور الفعلي ونوع النسبة البصرية (landscape أو portrait)
   categories: [
     {
@@ -27,7 +30,7 @@ const SURVEY_CONFIG = {
       folder: "assets/images/arab_female",
       badgeColor: "#ec4899", // وردي
       totalImages: 42,
-      aspectRatioType: "portrait" // 3:2
+      aspectRatioType: "portrait"
     },
     {
       id: "arab_male",
@@ -38,7 +41,7 @@ const SURVEY_CONFIG = {
       folder: "assets/images/arab_male",
       badgeColor: "#3b82f6", // أزرق
       totalImages: 18,
-      aspectRatioType: "portrait" // 3:2
+      aspectRatioType: "portrait"
     },
     {
       id: "chinese_male",
@@ -49,7 +52,7 @@ const SURVEY_CONFIG = {
       folder: "assets/images/chinese_male",
       badgeColor: "#8b5cf6", // بنفسجي
       totalImages: 36,
-      aspectRatioType: "landscape" // 4:5
+      aspectRatioType: "landscape"
     },
     {
       id: "chinese_female",
@@ -60,7 +63,7 @@ const SURVEY_CONFIG = {
       folder: "assets/images/chinese_female",
       badgeColor: "#10b981", // زمردي
       totalImages: 32,
-      aspectRatioType: "landscape" // 4:5
+      aspectRatioType: "landscape"
     }
   ],
 
