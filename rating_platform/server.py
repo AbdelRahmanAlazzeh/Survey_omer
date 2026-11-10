@@ -11,6 +11,7 @@ import csv
 import hmac
 import json
 import mimetypes
+import random
 import secrets
 import sqlite3
 import threading
@@ -18,6 +19,8 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
+
+import sessions
 
 BASE = Path(__file__).resolve().parent
 PUBLIC = BASE / "public"
@@ -94,6 +97,29 @@ def new_rater_id():
     return "r_" + secrets.token_hex(8)
 
 
+def build_session(conn, rater_id, cfg, rng=None):
+    """Create all trials for a rater (idempotent). Caller holds _db_lock."""
+    rng = rng or random.SystemRandom()
+    if conn.execute("SELECT 1 FROM trials WHERE rater_id=? LIMIT 1", (rater_id,)).fetchone():
+        return False
+    fps, pps = int(cfg["faces_per_sex"]), int(cfg["pairs_per_sex"])
+    rep = int(cfg["repeat_pairs_per_sex"])
+    sessions.validate_settings(fps, pps, rep)
+    sexes = ["F", "M"]
+    rng.shuffle(sexes)
+    for part, sex in enumerate(sexes, start=1):
+        rows = conn.execute(
+            "SELECT f.code, f.population, COUNT(t.id) FROM faces f "
+            "LEFT JOIN trials t ON (t.left_code=f.code OR t.right_code=f.code) AND t.is_repeat=0 "
+            "WHERE f.sex=? AND f.status='active' GROUP BY f.code", (sex,)).fetchall()
+        faces = sessions.select_faces([tuple(r) for r in rows], fps, rng)
+        for idx, (left, right, is_rep) in enumerate(sessions.build_pairs(faces, pps, rep, rng), start=1):
+            conn.execute(
+                "INSERT INTO trials(rater_id, part, idx, left_code, right_code, is_repeat) "
+                "VALUES(?,?,?,?,?,?)", (rater_id, part, idx, left, right, is_rep))
+    return True
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "RatingServer/0.1"
 
@@ -167,6 +193,19 @@ class Handler(BaseHTTPRequestHandler):
                 ).fetchone()[0]
             return self._json({"rater_id": rid, "answered": done,
                                "completed": r["completed_at"] is not None})
+        if u.path == "/api/trials":
+            rid = (qs.get("rid") or [""])[0]
+            with _db_lock, connect() as conn:
+                rows = conn.execute(
+                    "SELECT t.part, t.idx, t.left_code, t.right_code, t.winner IS NOT NULL AS answered, "
+                    "(SELECT sex FROM faces WHERE code=t.left_code) AS sex "
+                    "FROM trials t WHERE t.rater_id=? ORDER BY t.part, t.idx", (rid,)).fetchall()
+            if not rows:
+                return self._json({"error": "no session"}, 404)
+            return self._json({"trials": [
+                {"part": r["part"], "idx": r["idx"], "left": r["left_code"],
+                 "right": r["right_code"], "answered": bool(r["answered"]), "sex": r["sex"]}
+                for r in rows]})
         if u.path == "/admin.html":
             if not self._admin_ok(qs):
                 return self._json({"error": "forbidden"}, 403)
@@ -193,6 +232,43 @@ class Handler(BaseHTTPRequestHandler):
                 conn.execute("INSERT INTO raters(id, created_at, lang) VALUES(?,?,?)",
                              (rid, time.time(), lang))
             return self._json({"rater_id": rid}, 201)
+        if u.path == "/api/start":
+            body = self._read_json()
+            if not isinstance(body, dict):
+                return self._json({"error": "bad request"}, 400)
+            rid = str(body.get("rater_id", ""))
+            try:
+                with _db_lock, connect() as conn:
+                    if not conn.execute("SELECT 1 FROM raters WHERE id=?", (rid,)).fetchone():
+                        return self._json({"error": "unknown rater"}, 404)
+                    created = build_session(conn, rid, load_config())
+            except sessions.NotEnoughFaces as e:
+                return self._json({"error": "not enough faces", "detail": str(e)}, 503)
+            except ValueError as e:
+                return self._json({"error": "bad config", "detail": str(e)}, 500)
+            return self._json({"rater_id": rid, "created": created})
+        if u.path == "/api/answer":
+            body = self._read_json()
+            if not isinstance(body, dict):
+                return self._json({"error": "bad request"}, 400)
+            rid, part, idx = str(body.get("rater_id", "")), body.get("part"), body.get("idx")
+            winner, rt = body.get("winner"), body.get("rt_ms")
+            ints_ok = all(isinstance(v, int) and not isinstance(v, bool) for v in (part, idx, rt))
+            if winner not in ("left", "right") or not ints_ok or not (0 <= rt <= 600000):
+                return self._json({"error": "bad request"}, 400)
+            with _db_lock, connect() as conn:
+                cur = conn.execute(
+                    "UPDATE trials SET winner=?, rt_ms=?, answered_at=? "
+                    "WHERE rater_id=? AND part=? AND idx=? AND winner IS NULL",
+                    (winner, rt, time.time(), rid, part, idx))
+                if cur.rowcount == 1:
+                    return self._json({"saved": True})
+                exists = conn.execute(
+                    "SELECT 1 FROM trials WHERE rater_id=? AND part=? AND idx=?",
+                    (rid, part, idx)).fetchone()
+            if exists:
+                return self._json({"saved": False, "duplicate": True})
+            return self._json({"error": "unknown trial"}, 404)
         return self._json({"error": "not found"}, 404)
 
 
