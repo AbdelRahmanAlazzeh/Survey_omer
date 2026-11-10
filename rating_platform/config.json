@@ -1,0 +1,11 @@
+{
+  "faces_per_sex": 24,
+  "pairs_per_sex": 30,
+  "repeat_pairs_per_sex": 2,
+  "access_code": "",
+  "admin_key": "",
+  "study_open": true,
+  "ethics_approval_no": "_",
+  "contact_email": "_",
+  "port": 8080
+}
