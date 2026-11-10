@@ -16,6 +16,7 @@ const state = {
   currentChampionNumber: 1,
   currentChallengerNumber: 2,
   currentRoundNumber: 1,
+  currentScreen: 'screen-welcome',
   
   // Participant Info
   participant: {
@@ -70,17 +71,21 @@ const I18N = {
     catProgress: (c, t) => `المجموعة ${c} من ${t}`,
     catBadgePrefix: "المجموعة: ",
     arenaInstruction: "اختر الصورة الأكثر تفضيلاً بالنسبة لك",
-    arenaSubhint: "انقر مباشرة على الصورة أو استخدم مفاتيح الأسهم (⬅️ / ➡️) أو الأرقام (1 / 2)",
+    arenaSubhint: "انقر مباشرة على الصورة لاختيارها، أو اضغط الرقم (1 / 2) أو الأسهم (➡️ لليمين / ⬅️ لليسار)",
     lblChampion: "الخيار (1)",
     lblChallenger: "الخيار (2)",
     lblSelect: "اختيار هذا",
+    hintKeyA: `<span>مفتاح</span> <span class="kbd">1</span> أو <span class="kbd">➡️</span>`,
+    hintKeyB: `<span>مفتاح</span> <span class="kbd">2</span> أو <span class="kbd">⬅️</span>`,
+    chooseLeft: ": اختيار الصورة باليمين (1)",
+    chooseRight: ": اختيار الصورة باليسار (2)",
+    arrowA: "➡️",
+    arrowB: "⬅️",
     lblExploreGallery: "معرض جميع الصور",
     galleryTitle: "معرض كافة صور المجموعة",
     gallerySubtitle: "يمكنك استعراض كل الصور دفعة واحدة واختيار أي صورة مباشرة كخيار مفضل لك.",
     btnElectImage: "انتخاب كصورة مفضلة",
     lblCurrentChamp: "👑 الخيار الحالي",
-    chooseLeft: ": اختيار اليسار",
-    chooseRight: ": اختيار اليمين",
     closeZoom: ": إغلاق المعاينة",
     transTitle: "🎯 انتهت هذه المجموعة",
     transDesc: (catName, winnerNum) => `تم تحديد الصورة رقم (${winnerNum}) كخيار مفضل لمجموعة "${catName}". اضغط أدناه للمتابعة إلى المجموعة التالية.`,
@@ -127,18 +132,22 @@ const I18N = {
     lblComparison: "Comparison:",
     catProgress: (c, t) => `Set ${c} of ${t}`,
     catBadgePrefix: "Set: ",
-    arenaInstruction: "Select the image you prefer",
-    arenaSubhint: "Click on the image or use arrow keys (⬅️ / ➡️) or numbers (1 / 2)",
+    arenaInstruction: "Select your preferred image",
+    arenaSubhint: "Click directly on the image, or use keys (1 / 2) or arrow keys (⬅️ for Left / ➡️ for Right)",
     lblChampion: "Option 1",
     lblChallenger: "Option 2",
     lblSelect: "Select This",
+    hintKeyA: `<span>Key</span> <span class="kbd">1</span> or <span class="kbd">⬅️</span>`,
+    hintKeyB: `<span>Key</span> <span class="kbd">2</span> or <span class="kbd">➡️</span>`,
+    chooseLeft: ": Choose Left (Option 1)",
+    chooseRight: ": Choose Right (Option 2)",
+    arrowA: "⬅️",
+    arrowB: "➡️",
     lblExploreGallery: "Explore All Images",
     galleryTitle: "Full Set Image Gallery",
     gallerySubtitle: "Explore all images in this set at once or directly elect any image as your preferred option.",
     btnElectImage: "Elect as Preferred",
     lblCurrentChamp: "👑 Current Option",
-    chooseLeft: ": Select Left",
-    chooseRight: ": Select Right",
     closeZoom: ": Close Preview",
     transTitle: "🎯 Set Completed",
     transDesc: (catName, winnerNum) => `Image #${winnerNum} was selected for "${catName}". Click below to proceed to the next set.`,
@@ -165,9 +174,11 @@ const I18N = {
 
 // Initialize Application
 document.addEventListener('DOMContentLoaded', () => {
-  initEventListeners();
   initTheme();
-  checkSavedSession();
+  initLanguage();
+  initEventListeners();
+  initFormDraftListeners();
+  restoreOrInitSession();
 });
 
 /**
@@ -189,12 +200,31 @@ function initEventListeners() {
     }
   });
 
-  window.addEventListener('beforeunload', (e) => {
-    if (state.isSurveyActive && !state.isSurveyCompleted) {
-      e.preventDefault();
-      e.returnValue = '';
-    }
+  window.addEventListener('beforeunload', () => {
+    saveActiveSession();
   });
+}
+
+/**
+ * Sync form input fields with local state in real-time
+ */
+function initFormDraftListeners() {
+  const nameInput = document.getElementById('participant-id');
+  const ageInput = document.getElementById('participant-age');
+  const genderInput = document.getElementById('participant-gender');
+
+  const syncDraft = () => {
+    if (!state.isSurveyActive && !state.isSurveyCompleted) {
+      state.participant.name = nameInput ? nameInput.value.trim() : '';
+      state.participant.age = ageInput ? ageInput.value.trim() : '';
+      state.participant.gender = genderInput ? genderInput.value : '';
+      saveActiveSession();
+    }
+  };
+
+  if (nameInput) nameInput.addEventListener('input', syncDraft);
+  if (ageInput) ageInput.addEventListener('input', syncDraft);
+  if (genderInput) genderInput.addEventListener('change', syncDraft);
 }
 
 /**
@@ -202,18 +232,37 @@ function initEventListeners() {
  */
 function handleKeyNavigation(e) {
   const arenaScreen = document.getElementById('screen-arena');
-  const galleryModal = document.getElementById('gallery-modal');
+  const galleryScreen = document.getElementById('screen-gallery');
+  const zoomModal = document.getElementById('lightbox-modal');
+  const interstitialModal = document.getElementById('interstitial-modal');
+  
   if (!arenaScreen || !arenaScreen.classList.contains('active') || state.isProcessingDecision) return;
-  if (galleryModal && galleryModal.classList.contains('active')) return;
+  if (galleryScreen && galleryScreen.classList.contains('active')) return;
+  if (zoomModal && zoomModal.classList.contains('active')) return;
+  if (interstitialModal && interstitialModal.classList.contains('active')) return;
 
   if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
 
-  if (e.key === 'ArrowLeft' || e.key === '1' || e.key === 'a' || e.key === 'A') {
+  const isRtl = (document.documentElement.dir === 'rtl' || state.language === 'ar');
+
+  if (e.key === '1') {
     e.preventDefault();
-    selectWinner('left');
-  } else if (e.key === 'ArrowRight' || e.key === '2' || e.key === 'd' || e.key === 'D') {
+    selectOption('a');
+  } else if (e.key === '2') {
     e.preventDefault();
-    selectWinner('right');
+    selectOption('b');
+  } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+    e.preventDefault();
+    // Physical Right side card:
+    // In RTL layout (Arabic), Card A (Option 1) is visually on the right.
+    // In LTR layout (English), Card B (Option 2) is visually on the right.
+    selectOption(isRtl ? 'a' : 'b');
+  } else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+    e.preventDefault();
+    // Physical Left side card:
+    // In RTL layout (Arabic), Card B (Option 2) is visually on the left.
+    // In LTR layout (English), Card A (Option 1) is visually on the left.
+    selectOption(isRtl ? 'b' : 'a');
   }
 }
 
@@ -244,6 +293,7 @@ function startSurvey() {
 
   state.participant.name = fullName;
   state.participant.id = cleanId;
+  state.participant.sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
   state.participant.age = ageVal;
   state.participant.gender = genderInput ? genderInput.value : '';
   state.participant.attempt = state.participant.attempt || 1;
@@ -275,8 +325,6 @@ function retakeSurveyForSameParticipant() {
   state.isSurveyActive = true;
   state.isSurveyCompleted = false;
 
-  clearActiveSession();
-
   showScreen('screen-arena');
   document.getElementById('survey-status-bar').classList.add('active');
 
@@ -284,20 +332,25 @@ function retakeSurveyForSameParticipant() {
 }
 
 /**
- * Save Active Session to localStorage
+ * Save Active Session to localStorage continuously
  */
 function saveActiveSession() {
-  if (!state.isSurveyActive || state.isSurveyCompleted) return;
   try {
+    const isModalOpen = !!(document.getElementById('interstitial-modal')?.classList.contains('active'));
     const sessionData = {
       currentCategoryIndex: state.currentCategoryIndex,
       currentChampionNumber: state.currentChampionNumber,
       currentChallengerNumber: state.currentChallengerNumber,
       currentRoundNumber: state.currentRoundNumber,
+      currentScreen: state.currentScreen || 'screen-welcome',
       participant: state.participant,
       winners: state.winners,
       history: state.history,
-      language: state.language
+      isSurveyActive: state.isSurveyActive,
+      isSurveyCompleted: state.isSurveyCompleted,
+      language: state.language,
+      theme: state.theme,
+      isTransitionModalOpen: isModalOpen
     };
     localStorage.setItem('SURVEY_ACTIVE_SESSION', JSON.stringify(sessionData));
   } catch (err) {
@@ -317,79 +370,100 @@ function clearActiveSession() {
 }
 
 /**
- * Check if a previous survey session exists to allow resuming
+ * Automatically Restore session on page load / reload seamlessly
  */
-function checkSavedSession() {
+function restoreOrInitSession() {
   try {
     const raw = localStorage.getItem('SURVEY_ACTIVE_SESSION');
-    if (!raw) return;
-    const sessionData = JSON.parse(raw);
-    if (!sessionData || typeof sessionData.currentCategoryIndex !== 'number') return;
+    if (!raw) {
+      showScreen('screen-welcome');
+      return;
+    }
+    const s = JSON.parse(raw);
+    if (!s) {
+      showScreen('screen-welcome');
+      return;
+    }
 
-    const banner = document.getElementById('resume-session-banner');
-    if (!banner) return;
+    state.currentCategoryIndex = typeof s.currentCategoryIndex === 'number' ? s.currentCategoryIndex : 0;
+    state.currentChampionNumber = s.currentChampionNumber || 1;
+    state.currentChallengerNumber = s.currentChallengerNumber || 2;
+    state.currentRoundNumber = s.currentRoundNumber || 1;
+    state.participant = s.participant || { id: '', name: '', gender: '', age: '', attempt: 1 };
+    state.winners = Array.isArray(s.winners) ? s.winners : [];
+    state.history = Array.isArray(s.history) ? s.history : [];
+    state.isSurveyActive = !!s.isSurveyActive;
+    state.isSurveyCompleted = !!s.isSurveyCompleted;
 
-    const lang = state.language;
-    const catNum = sessionData.currentCategoryIndex + 1;
-    const roundNum = sessionData.currentRoundNumber || 1;
+    // Restore Form inputs if user was on welcome screen
+    const nameInput = document.getElementById('participant-id');
+    const ageInput = document.getElementById('participant-age');
+    const genderInput = document.getElementById('participant-gender');
+    if (nameInput && state.participant.name) nameInput.value = state.participant.name;
+    if (ageInput && state.participant.age) ageInput.value = state.participant.age;
+    if (genderInput && state.participant.gender) genderInput.value = state.participant.gender;
 
-    document.getElementById('resume-banner-title').textContent = I18N[lang].resumeTitle;
-    document.getElementById('resume-banner-desc').textContent = I18N[lang].resumeDesc(catNum, roundNum);
-    document.getElementById('btn-resume-text').textContent = I18N[lang].btnResume;
-    document.getElementById('btn-discard-text').textContent = I18N[lang].btnDiscard;
+    const screenToRestore = s.currentScreen || (state.isSurveyActive ? 'screen-arena' : (state.isSurveyCompleted ? 'screen-results' : 'screen-welcome'));
 
-    banner.style.display = 'flex';
+    if (state.isSurveyActive && !state.isSurveyCompleted) {
+      // User was in an active survey - restore directly without redirecting to welcome screen
+      document.getElementById('survey-status-bar').classList.add('active');
+
+      if (screenToRestore === 'screen-gallery') {
+        updateStatusBar();
+        openCategoryGallery();
+      } else {
+        showScreen('screen-arena');
+        adaptArenaFraming();
+        updateStatusBar();
+        loadCurrentRound();
+
+        if (s.isTransitionModalOpen) {
+          handleCategoryCompletion();
+        }
+      }
+    } else if (state.isSurveyCompleted) {
+      // User was on the completed results screen
+      document.getElementById('survey-status-bar').classList.remove('active');
+      showScreen('screen-results');
+
+      const pTag = document.getElementById('participant-summary-tag');
+      if (pTag) {
+        pTag.textContent = I18N[state.language].participantSummary(
+          state.participant.name,
+          state.participant.age,
+          state.participant.attempt || 1
+        );
+      }
+      renderWinnersGrid();
+
+      const statusBox = document.getElementById('submission-status');
+      const statusText = document.getElementById('status-text');
+      if (statusBox && statusText) {
+        statusBox.className = 'submit-status-box status-success';
+        statusText.textContent = I18N[state.language].statusSuccess;
+      }
+    } else {
+      showScreen('screen-welcome');
+    }
   } catch (err) {
-    console.warn('Check session error:', err);
+    console.warn('Session restore error:', err);
+    showScreen('screen-welcome');
   }
 }
 
 /**
- * Resume Saved Session
+ * Resume Saved Session (Fallback handler if invoked)
  */
 function resumeSavedSession() {
-  try {
-    const raw = localStorage.getItem('SURVEY_ACTIVE_SESSION');
-    if (!raw) return;
-    const s = JSON.parse(raw);
-
-    state.currentCategoryIndex = s.currentCategoryIndex || 0;
-    state.currentChampionNumber = s.currentChampionNumber || 1;
-    state.currentChallengerNumber = s.currentChallengerNumber || 2;
-    state.currentRoundNumber = s.currentRoundNumber || 1;
-    state.participant = s.participant || { id: 'user', name: '', attempt: 1 };
-    state.winners = s.winners || [];
-    state.history = s.history || [];
-    state.isSurveyActive = true;
-    state.isSurveyCompleted = false;
-
-    if (s.language) {
-      state.language = s.language;
-      applyLanguageTexts();
-    }
-
-    const banner = document.getElementById('resume-session-banner');
-    if (banner) banner.style.display = 'none';
-
-    showScreen('screen-arena');
-    document.getElementById('survey-status-bar').classList.add('active');
-
-    adaptArenaFraming();
-    updateStatusBar();
-    loadCurrentRound();
-  } catch (err) {
-    console.error('Resume session failed:', err);
-    discardSavedSession();
-  }
+  restoreOrInitSession();
 }
 
 /**
  * Discard Saved Session
  */
 function discardSavedSession() {
-  clearActiveSession();
-  const banner = document.getElementById('resume-session-banner');
-  if (banner) banner.style.display = 'none';
+  resetForNewParticipant();
 }
 
 /**
@@ -509,9 +583,9 @@ function generateSvgPlaceholder(category, imageNumber) {
 }
 
 /**
- * Handle user choice: 'left' (Champion) or 'right' (Challenger)
+ * Select candidate by Option key: 'a' (Option 1) or 'b' (Option 2)
  */
-function selectWinner(choice) {
+function selectOption(choiceKey) {
   if (state.isProcessingDecision) return;
   state.isProcessingDecision = true;
 
@@ -520,8 +594,9 @@ function selectWinner(choice) {
   
   const championNumber = state.currentChampionNumber;
   const challengerNumber = state.currentChallengerNumber;
-  const chosenNumber = (choice === 'left') ? championNumber : challengerNumber;
-  const eliminatedNumber = (choice === 'left') ? challengerNumber : championNumber;
+  const isOptionA = (choiceKey === 'a');
+  const chosenNumber = isOptionA ? championNumber : challengerNumber;
+  const eliminatedNumber = isOptionA ? challengerNumber : championNumber;
 
   // Log round decision
   state.history.push({
@@ -532,6 +607,8 @@ function selectWinner(choice) {
     categoryId: category.id,
     categoryTitle: category.titleEn,
     roundNumber: state.currentRoundNumber,
+    optionAImage: championNumber,
+    optionBImage: challengerNumber,
     leftImage: championNumber,
     rightImage: challengerNumber,
     winnerChosen: chosenNumber,
@@ -541,7 +618,7 @@ function selectWinner(choice) {
     timestamp: new Date().toISOString()
   });
 
-  const chosenCard = choice === 'left' ? document.getElementById('card-candidate-a') : document.getElementById('card-candidate-b');
+  const chosenCard = isOptionA ? document.getElementById('card-candidate-a') : document.getElementById('card-candidate-b');
   if (chosenCard) {
     chosenCard.classList.add('card-selected');
   }
@@ -570,6 +647,24 @@ function selectWinner(choice) {
       loadCurrentRound();
     }
   }, 180);
+}
+
+/**
+ * Handle user choice by physical side or option key (for compatibility)
+ */
+function selectWinner(sideOrKey) {
+  if (sideOrKey === 'a' || sideOrKey === 'b') {
+    selectOption(sideOrKey);
+    return;
+  }
+  const isRtl = (document.documentElement.dir === 'rtl' || state.language === 'ar');
+  if (sideOrKey === 'left') {
+    // Physical Left: In RTL (Arabic) that's Card B, in LTR (English) that's Card A
+    selectOption(isRtl ? 'b' : 'a');
+  } else if (sideOrKey === 'right') {
+    // Physical Right: In RTL (Arabic) that's Card A, in LTR (English) that's Card B
+    selectOption(isRtl ? 'a' : 'b');
+  }
 }
 
 /**
@@ -676,6 +771,7 @@ function handleCategoryCompletion() {
     desc.textContent = I18N[lang].transDesc(catName, state.currentChampionNumber);
 
     modal.classList.add('active');
+    saveActiveSession();
   }
 }
 
@@ -685,6 +781,7 @@ function handleCategoryCompletion() {
 function proceedToNextCategory() {
   document.getElementById('interstitial-modal').classList.remove('active');
   startCategory(state.currentCategoryIndex + 1);
+  saveActiveSession();
 }
 
 /**
@@ -694,12 +791,12 @@ function finishSurvey() {
   state.participant.endTime = new Date().toISOString();
   state.isSurveyActive = false;
   state.isSurveyCompleted = true;
-  
-  clearActiveSession();
+  state.currentScreen = 'screen-results';
 
   document.getElementById('survey-status-bar').classList.remove('active');
   
   showScreen('screen-results');
+  saveActiveSession();
 
   const pTag = document.getElementById('participant-summary-tag');
   if (pTag) {
@@ -762,8 +859,11 @@ async function submitSurveyData() {
   const lang = state.language;
 
   const currentAttempt = state.participant.attempt || 1;
+  const botCheckVal = document.getElementById('contact-website-check')?.value || '';
 
   const payload = {
+    sessionId: state.participant.sessionId || ('sess_' + Date.now()),
+    botCheck: botCheckVal,
     participantId: state.participant.id,
     participantName: state.participant.name,
     participantAge: state.participant.age,
@@ -894,6 +994,12 @@ function resetForNewParticipant() {
   clearActiveSession();
   state.isSurveyActive = false;
   state.isSurveyCompleted = false;
+  state.currentCategoryIndex = 0;
+  state.currentChampionNumber = 1;
+  state.currentChallengerNumber = 2;
+  state.currentRoundNumber = 1;
+  state.winners = [];
+  state.history = [];
 
   state.participant = {
     id: '',
@@ -911,11 +1017,14 @@ function resetForNewParticipant() {
   const ageInput = document.getElementById('participant-age');
   if (ageInput) ageInput.value = '';
 
+  const genderInput = document.getElementById('participant-gender');
+  if (genderInput) genderInput.value = '';
+
   const banner = document.getElementById('resume-session-banner');
   if (banner) banner.style.display = 'none';
 
-  showScreen('screen-welcome');
   document.getElementById('survey-status-bar').classList.remove('active');
+  showScreen('screen-welcome');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -926,16 +1035,25 @@ function updateStatusBar() {
   const cat = SURVEY_CONFIG.categories[state.currentCategoryIndex];
   const lang = state.language;
 
+  if (!cat) return;
+
   const catTitle = lang === 'ar' ? cat.titleAr : cat.titleEn;
-  document.getElementById('cat-title').textContent = I18N[lang].catBadgePrefix + catTitle;
-  document.getElementById('cat-progress-text').textContent = I18N[lang].catProgress(
-    state.currentCategoryIndex + 1,
-    SURVEY_CONFIG.categories.length
-  );
+  const catTitleEl = document.getElementById('cat-title');
+  if (catTitleEl) catTitleEl.textContent = I18N[lang].catBadgePrefix + catTitle;
+  
+  const catProgressEl = document.getElementById('cat-progress-text');
+  if (catProgressEl) {
+    catProgressEl.textContent = I18N[lang].catProgress(
+      state.currentCategoryIndex + 1,
+      SURVEY_CONFIG.categories.length
+    );
+  }
 
   const totalRoundsInCat = cat.totalImages - 1;
-  document.getElementById('round-number-text').textContent = state.currentRoundNumber;
-  document.getElementById('total-rounds-text').textContent = totalRoundsInCat;
+  const roundNumberEl = document.getElementById('round-number-text');
+  const totalRoundsEl = document.getElementById('total-rounds-text');
+  if (roundNumberEl) roundNumberEl.textContent = state.currentRoundNumber;
+  if (totalRoundsEl) totalRoundsEl.textContent = totalRoundsInCat;
 
   const totalSurveyComparisons = SURVEY_CONFIG.categories.reduce((acc, c) => acc + (c.totalImages - 1), 0);
   
@@ -946,7 +1064,8 @@ function updateStatusBar() {
   currentTotalProgress += (state.currentRoundNumber - 1);
 
   const percentage = Math.min(100, Math.round((currentTotalProgress / totalSurveyComparisons) * 100));
-  document.getElementById('progress-fill').style.width = `${percentage}%`;
+  const progressFillEl = document.getElementById('progress-fill');
+  if (progressFillEl) progressFillEl.style.width = `${percentage}%`;
 }
 
 /**
@@ -956,6 +1075,8 @@ function showScreen(screenId) {
   document.querySelectorAll('.screen-view').forEach(s => s.classList.remove('active'));
   const target = document.getElementById(screenId);
   if (target) target.classList.add('active');
+  state.currentScreen = screenId;
+  saveActiveSession();
 }
 
 /**
@@ -964,10 +1085,26 @@ function showScreen(screenId) {
 function toggleLanguage() {
   state.language = state.language === 'ar' ? 'en' : 'ar';
   const lang = state.language;
+  localStorage.setItem('SURVEY_LANGUAGE', lang);
 
   document.documentElement.lang = lang;
   document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
   document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+  applyLanguageTexts();
+  saveActiveSession();
+}
+
+/**
+ * Initialize Language from LocalStorage
+ */
+function initLanguage() {
+  const savedLang = localStorage.getItem('SURVEY_LANGUAGE') || 'ar';
+  state.language = savedLang;
+
+  document.documentElement.lang = savedLang;
+  document.documentElement.dir = savedLang === 'ar' ? 'rtl' : 'ltr';
+  document.body.dir = savedLang === 'ar' ? 'rtl' : 'ltr';
 
   applyLanguageTexts();
 }
@@ -979,62 +1116,146 @@ function applyLanguageTexts() {
   const lang = state.language;
   const t = I18N[lang];
 
-  document.getElementById('app-title-text').textContent = t.appTitle;
+  const appTitle = document.getElementById('app-title-text');
+  if (appTitle) appTitle.textContent = t.appTitle;
+  
   const langLabel = document.querySelector('.lang-label');
   if (langLabel) langLabel.textContent = t.btnLang;
 
   // Welcome Screen
-  document.getElementById('welcome-heading').textContent = t.welcomeHeading;
-  document.getElementById('welcome-subtext').textContent = t.welcomeSubtext;
-  document.getElementById('inst-1-title').textContent = t.inst1Title;
-  document.getElementById('inst-1-desc').textContent = t.inst1Desc;
-  document.getElementById('inst-2-title').textContent = t.inst2Title;
-  document.getElementById('inst-2-desc').textContent = t.inst2Desc;
-  document.getElementById('inst-3-title').textContent = t.inst3Title;
-  document.getElementById('inst-3-desc').textContent = t.inst3Desc;
-  document.getElementById('lbl-part-id').textContent = t.lblPartId;
-  document.getElementById('participant-id').placeholder = t.placeholderPartId;
-  document.getElementById('lbl-age').textContent = t.lblAge;
-  document.getElementById('participant-age').placeholder = t.placeholderAge;
-  document.getElementById('lbl-gender').textContent = t.lblGender;
-  document.getElementById('opt-select').textContent = t.optSelect;
-  document.getElementById('opt-male').textContent = t.optMale;
-  document.getElementById('opt-female').textContent = t.optFemale;
-  document.getElementById('opt-other').textContent = t.optOther;
-  document.getElementById('btn-start-survey').querySelector('span').textContent = t.btnStart;
+  const welcomeHeading = document.getElementById('welcome-heading');
+  if (welcomeHeading) welcomeHeading.textContent = t.welcomeHeading;
+  
+  const welcomeSubtext = document.getElementById('welcome-subtext');
+  if (welcomeSubtext) welcomeSubtext.textContent = t.welcomeSubtext;
+
+  const inst1Title = document.getElementById('inst-1-title');
+  if (inst1Title) inst1Title.textContent = t.inst1Title;
+
+  const inst1Desc = document.getElementById('inst-1-desc');
+  if (inst1Desc) inst1Desc.textContent = t.inst1Desc;
+
+  const inst2Title = document.getElementById('inst-2-title');
+  if (inst2Title) inst2Title.textContent = t.inst2Title;
+
+  const inst2Desc = document.getElementById('inst-2-desc');
+  if (inst2Desc) inst2Desc.textContent = t.inst2Desc;
+
+  const inst3Title = document.getElementById('inst-3-title');
+  if (inst3Title) inst3Title.textContent = t.inst3Title;
+
+  const inst3Desc = document.getElementById('inst-3-desc');
+  if (inst3Desc) inst3Desc.textContent = t.inst3Desc;
+
+  const lblPartId = document.getElementById('lbl-part-id');
+  if (lblPartId) lblPartId.textContent = t.lblPartId;
+
+  const partId = document.getElementById('participant-id');
+  if (partId) partId.placeholder = t.placeholderPartId;
+
+  const lblAge = document.getElementById('lbl-age');
+  if (lblAge) lblAge.textContent = t.lblAge;
+
+  const partAge = document.getElementById('participant-age');
+  if (partAge) partAge.placeholder = t.placeholderAge;
+
+  const lblGender = document.getElementById('lbl-gender');
+  if (lblGender) lblGender.textContent = t.lblGender;
+
+  const optSelect = document.getElementById('opt-select');
+  if (optSelect) optSelect.textContent = t.optSelect;
+
+  const optMale = document.getElementById('opt-male');
+  if (optMale) optMale.textContent = t.optMale;
+
+  const optFemale = document.getElementById('opt-female');
+  if (optFemale) optFemale.textContent = t.optFemale;
+
+  const optOther = document.getElementById('opt-other');
+  if (optOther) optOther.textContent = t.optOther;
+
+  const btnStart = document.getElementById('btn-start-survey');
+  if (btnStart && btnStart.querySelector('span')) btnStart.querySelector('span').textContent = t.btnStart;
 
   // Status Bar
-  document.getElementById('lbl-comparison').textContent = t.lblComparison;
+  const lblComp = document.getElementById('lbl-comparison');
+  if (lblComp) lblComp.textContent = t.lblComparison;
   updateStatusBar();
 
   // Arena Screen
-  document.getElementById('arena-instruction').textContent = t.arenaInstruction;
-  document.getElementById('arena-subhint').textContent = t.arenaSubhint;
-  document.getElementById('lbl-champion').textContent = t.lblChampion;
-  document.getElementById('lbl-challenger').textContent = t.lblChallenger;
-  document.getElementById('lbl-select-a').querySelector('span').textContent = t.lblSelect;
-  document.getElementById('lbl-select-b').querySelector('span').textContent = t.lblSelect;
-  document.getElementById('lbl-explore-gallery').textContent = t.lblExploreGallery;
-  document.getElementById('txt-choose-left').textContent = t.chooseLeft;
-  document.getElementById('txt-choose-right').textContent = t.chooseRight;
-  document.getElementById('txt-close-zoom').textContent = t.closeZoom;
+  const arenaInst = document.getElementById('arena-instruction');
+  if (arenaInst) arenaInst.textContent = t.arenaInstruction;
+
+  const arenaSub = document.getElementById('arena-subhint');
+  if (arenaSub) arenaSub.textContent = t.arenaSubhint;
+
+  const lblChamp = document.getElementById('lbl-champion');
+  if (lblChamp) lblChamp.textContent = t.lblChampion;
+
+  const lblChal = document.getElementById('lbl-challenger');
+  if (lblChal) lblChal.textContent = t.lblChallenger;
+
+  const lblSelA = document.getElementById('lbl-select-a');
+  if (lblSelA && lblSelA.querySelector('span')) lblSelA.querySelector('span').textContent = t.lblSelect;
+
+  const lblSelB = document.getElementById('lbl-select-b');
+  if (lblSelB && lblSelB.querySelector('span')) lblSelB.querySelector('span').textContent = t.lblSelect;
+
+  const hintKeyA = document.getElementById('hint-key-a');
+  if (hintKeyA) hintKeyA.innerHTML = t.hintKeyA;
+
+  const hintKeyB = document.getElementById('hint-key-b');
+  if (hintKeyB) hintKeyB.innerHTML = t.hintKeyB;
+
+  const hintArrowA = document.getElementById('hint-arrow-a');
+  if (hintArrowA) hintArrowA.textContent = t.arrowA;
+
+  const hintArrowB = document.getElementById('hint-arrow-b');
+  if (hintArrowB) hintArrowB.textContent = t.arrowB;
+
+  const lblExpGal = document.getElementById('lbl-explore-gallery');
+  if (lblExpGal) lblExpGal.textContent = t.lblExploreGallery;
+
+  const txtLeft = document.getElementById('txt-choose-left');
+  if (txtLeft) txtLeft.textContent = t.chooseLeft;
+
+  const txtRight = document.getElementById('txt-choose-right');
+  if (txtRight) txtRight.textContent = t.chooseRight;
+
+  const txtClose = document.getElementById('txt-close-zoom');
+  if (txtClose) txtClose.textContent = t.closeZoom;
 
   // Gallery Modal
-  document.getElementById('gallery-title').textContent = t.galleryTitle;
-  document.getElementById('gallery-subtitle').textContent = t.gallerySubtitle;
+  const galTitle = document.getElementById('gallery-title');
+  if (galTitle) galTitle.textContent = t.galleryTitle;
+
+  const galSub = document.getElementById('gallery-subtitle');
+  if (galSub) galSub.textContent = t.gallerySubtitle;
 
   // Interstitial Modal
-  document.getElementById('btn-next-cat-text').textContent = t.btnNextCat;
+  const btnNext = document.getElementById('btn-next-cat-text');
+  if (btnNext) btnNext.textContent = t.btnNextCat;
 
   // Results Screen
-  document.getElementById('res-heading').textContent = t.resHeading;
-  document.getElementById('res-subtext').textContent = t.resSubtext;
-  document.getElementById('btn-retake-text').textContent = t.btnRetake;
-  document.getElementById('btn-new-eval-text').textContent = t.btnNewEval;
-  document.getElementById('btn-csv-text').textContent = t.btnCsv;
-  document.getElementById('btn-json-text').textContent = t.btnJson;
+  const resHeading = document.getElementById('res-heading');
+  if (resHeading) resHeading.textContent = t.resHeading;
 
-  if (document.getElementById('screen-results').classList.contains('active')) {
+  const resSub = document.getElementById('res-subtext');
+  if (resSub) resSub.textContent = t.resSubtext;
+
+  const btnRetake = document.getElementById('btn-retake-text');
+  if (btnRetake) btnRetake.textContent = t.btnRetake;
+
+  const btnNew = document.getElementById('btn-new-eval-text');
+  if (btnNew) btnNew.textContent = t.btnNewEval;
+
+  const btnCsv = document.getElementById('btn-csv-text');
+  if (btnCsv) btnCsv.textContent = t.btnCsv;
+
+  const btnJson = document.getElementById('btn-json-text');
+  if (btnJson) btnJson.textContent = t.btnJson;
+
+  if (document.getElementById('screen-results') && document.getElementById('screen-results').classList.contains('active')) {
     renderWinnersGrid();
   }
 }
@@ -1046,12 +1267,21 @@ function toggleTheme() {
   const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
   const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', newTheme);
-  document.getElementById('btn-toggle-theme').textContent = newTheme === 'dark' ? '🌙' : '☀️';
+  const btnTheme = document.getElementById('btn-toggle-theme');
+  if (btnTheme) btnTheme.textContent = newTheme === 'dark' ? '🌙' : '☀️';
   state.theme = newTheme;
+  localStorage.setItem('SURVEY_THEME', newTheme);
 }
 
+/**
+ * Initialize Theme from LocalStorage
+ */
 function initTheme() {
-  document.documentElement.setAttribute('data-theme', 'dark');
+  const savedTheme = localStorage.getItem('SURVEY_THEME') || 'dark';
+  state.theme = savedTheme;
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  const btnTheme = document.getElementById('btn-toggle-theme');
+  if (btnTheme) btnTheme.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
 }
 
 /**
@@ -1073,6 +1303,7 @@ function closeZoom() {
 
 // Global exports
 window.startSurvey = startSurvey;
+window.selectOption = selectOption;
 window.selectWinner = selectWinner;
 window.proceedToNextCategory = proceedToNextCategory;
 window.zoomImage = zoomImage;

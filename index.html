@@ -139,6 +139,12 @@
 
           <!-- Participant Form (Full Name & Age Required) -->
           <form id="participant-form" class="participant-form" onsubmit="event.preventDefault(); startSurvey();">
+            <!-- Bot Trap Honeypot (Hidden from genuine users) -->
+            <div style="display:none !important; visibility:hidden; position:absolute; left:-9999px;" aria-hidden="true">
+              <label for="contact-website-check">Leave empty</label>
+              <input type="text" id="contact-website-check" name="security_hp" tabindex="-1" autocomplete="off">
+            </div>
+
             <div class="form-group">
               <label for="participant-id" id="lbl-part-id">الاسم الكامل (مطلوب) * :</label>
               <input type="text" id="participant-id" class="form-control" placeholder="أدخل اسمك الكامل..." required minlength="2" autocomplete="name">
@@ -187,7 +193,7 @@
 
         <div id="battle-arena-container" class="battle-arena arena-landscape">
           <!-- Left Candidate (Option A) -->
-          <div id="card-candidate-a" class="candidate-card" onclick="selectWinner('left')">
+          <div id="card-candidate-a" class="candidate-card" onclick="selectOption('a')">
             <div id="badge-card-a" class="card-badge badge-option-a">
               <span class="badge-dot"></span>
               <span id="lbl-champion">الخيار (1)</span>
@@ -202,9 +208,9 @@
 
             <div class="card-footer">
               <div class="card-footer-info">
-                <span class="key-hint" id="hint-key-left">
+                <span class="key-hint" id="hint-key-a">
                   <span>مفتاح</span>
-                  <span class="kbd">⬅️</span> أو <span class="kbd">1</span>
+                  <span class="kbd">1</span> أو <span class="kbd">➡️</span>
                 </span>
               </div>
               <div class="select-indicator" id="lbl-select-a">
@@ -220,7 +226,7 @@
           </div>
 
           <!-- Right Candidate (Option B) -->
-          <div id="card-candidate-b" class="candidate-card" onclick="selectWinner('right')">
+          <div id="card-candidate-b" class="candidate-card" onclick="selectOption('b')">
             <div id="badge-card-b" class="card-badge badge-option-b">
               <span class="badge-dot"></span>
               <span id="lbl-challenger">الخيار (2)</span>
@@ -235,9 +241,9 @@
 
             <div class="card-footer">
               <div class="card-footer-info">
-                <span class="key-hint" id="hint-key-right">
+                <span class="key-hint" id="hint-key-b">
                   <span>مفتاح</span>
-                  <span class="kbd">➡️</span> أو <span class="kbd">2</span>
+                  <span class="kbd">2</span> أو <span class="kbd">⬅️</span>
                 </span>
               </div>
               <div class="select-indicator" id="lbl-select-b">
@@ -251,12 +257,12 @@
         <!-- Shortcuts Reminder Footer -->
         <div class="shortcuts-bar">
           <div class="shortcut-item">
-            <span class="kbd">⬅️</span> / <span class="kbd">1</span>
-            <span id="txt-choose-left">: اختيار اليسار</span>
+            <span class="kbd">1</span> / <span id="hint-arrow-a" class="kbd">➡️</span>
+            <span id="txt-choose-left">: اختيار الصورة باليمين (1)</span>
           </div>
           <div class="shortcut-item">
-            <span class="kbd">➡️</span> / <span class="kbd">2</span>
-            <span id="txt-choose-right">: اختيار اليمين</span>
+            <span class="kbd">2</span> / <span id="hint-arrow-b" class="kbd">⬅️</span>
+            <span id="txt-choose-right">: اختيار الصورة باليسار (2)</span>
           </div>
           <div class="shortcut-item">
             <span class="kbd">ESC</span>
