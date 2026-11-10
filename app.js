@@ -894,6 +894,9 @@ async function submitSurveyData() {
   statusBox.className = 'submit-status-box status-sending';
   statusText.textContent = I18N[lang].statusSending;
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+
   try {
     await fetch(webhookUrl, {
       method: 'POST',
@@ -901,16 +904,31 @@ async function submitSurveyData() {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
 
     statusBox.className = 'submit-status-box status-success';
     statusText.textContent = I18N[lang].statusSuccess;
   } catch (err) {
+    clearTimeout(timeoutId);
     console.error('Submission error:', err);
     statusBox.className = 'submit-status-box status-fallback';
     statusText.textContent = I18N[lang].statusLocalOnly;
   }
+}
+
+/**
+ * Sanitize cell values for CSV export (Prevents CSV Formula Injection)
+ */
+function safeCsvField(val) {
+  if (val === null || val === undefined) return '""';
+  let s = String(val).replace(/"/g, '""');
+  if (/^[=+\-@\t\r]/.test(s)) {
+    s = "'" + s;
+  }
+  return `"${s}"`;
 }
 
 /**
@@ -924,17 +942,17 @@ function exportDataAsCSV() {
   csvContent += "Participant ID,Full Name,Age,Gender,Attempt #,Start Time,End Time,Arab Female Winner,Arab Male Winner,Chinese Male Winner,Chinese Female Winner\n";
 
   const row = [
-    `"${p.id}"`,
-    `"${p.name || ''}"`,
-    `"${p.age || ''}"`,
-    `"${p.gender || ''}"`,
-    `"${p.attempt || 1}"`,
-    `"${p.startTime || ''}"`,
-    `"${p.endTime || ''}"`,
-    `"${w.find(x => x.categoryId === 'arab_female')?.winnerImageNumber || ''}"`,
-    `"${w.find(x => x.categoryId === 'arab_male')?.winnerImageNumber || ''}"`,
-    `"${w.find(x => x.categoryId === 'chinese_male')?.winnerImageNumber || ''}"`,
-    `"${w.find(x => x.categoryId === 'chinese_female')?.winnerImageNumber || ''}"`
+    safeCsvField(p.id),
+    safeCsvField(p.name),
+    safeCsvField(p.age),
+    safeCsvField(p.gender),
+    safeCsvField(p.attempt || 1),
+    safeCsvField(p.startTime),
+    safeCsvField(p.endTime),
+    safeCsvField(w.find(x => x.categoryId === 'arab_female')?.winnerImageNumber || ''),
+    safeCsvField(w.find(x => x.categoryId === 'arab_male')?.winnerImageNumber || ''),
+    safeCsvField(w.find(x => x.categoryId === 'chinese_male')?.winnerImageNumber || ''),
+    safeCsvField(w.find(x => x.categoryId === 'chinese_female')?.winnerImageNumber || '')
   ].join(",");
 
   csvContent += row + "\n\n";
