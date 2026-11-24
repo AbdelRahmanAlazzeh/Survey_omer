@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>Researcher Dashboard • 研究人员控制台</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="admin-wrap">
+    <div class="admin-head">
+      <div>
+        <h1>Researcher Dashboard • 研究人员控制台</h1>
+        <p id="progress-line" class="small">Loading…</p>
+      </div>
+      <button id="btn-refresh" type="button" class="btn btn-inline">Refresh • 刷新</button>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div id="st-answered" class="stat-val">-</div>
+        <div class="stat-lbl">Answered comparisons</div>
+      </div>
+      <div class="stat-card">
+        <div id="st-repeat" class="stat-val">-</div>
+        <div class="stat-lbl">Repeat-pair agreement</div>
+      </div>
+      <div class="stat-card">
+        <div id="st-perface" class="stat-val">-</div>
+        <div class="stat-lbl">Comparisons per face (min / mean / max)</div>
+      </div>
+      <div class="stat-card">
+        <div id="st-open" class="stat-val">-</div>
+        <div class="stat-lbl">Study open</div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-bottom:16px;">
+      <h2 style="margin-top:0;">Active faces • 有效面孔数</h2>
+      <p id="st-faces" style="margin-bottom:0;">-</p>
+    </div>
+
+    <div class="panel" style="margin-bottom:16px;">
+      <h2 style="margin-top:0;">Progress • 进度 (Completed / Started)</h2>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Population</th>
+            <th>Sex</th>
+            <th>Completed / Started</th>
+          </tr>
+        </thead>
+        <tbody id="group-body"></tbody>
+      </table>
+    </div>
+
+    <div class="panel" style="margin-bottom:16px; overflow-x:auto;">
+      <h2 style="margin-top:0;">Participants • بيانات المشاركين</h2>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Lang</th>
+            <th>Population</th>
+            <th>Sex</th>
+            <th>Age</th>
+            <th>Residence</th>
+            <th>Progress</th>
+            <th>Status</th>
+            <th>Confidence / Angle</th>
+          </tr>
+        </thead>
+        <tbody id="participants-body"></tbody>
+      </table>
+    </div>
+
+    <div class="panel" style="margin-bottom:16px; overflow-x:auto;">
+      <h2 style="margin-top:0;">Bradley-Terry Live Preview • معاينة درجات الجاذبية (Top &amp; Bottom)</h2>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Face Code</th>
+            <th>Sex</th>
+            <th>Population</th>
+            <th>BT Log-Strength</th>
+            <th>Wins / Comparisons</th>
+          </tr>
+        </thead>
+        <tbody id="bt-body"></tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <h2 style="margin-top:0;">Download data • 下载数据</h2>
+      <div id="dl-links" class="dl-grid"></div>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      const key = new URLSearchParams(window.location.search).get("key") || "";
+      const encKey = encodeURIComponent(key);
+
+      const downloads = [
+        { label: "raters.csv", path: `/api/admin/export/raters.csv?key=${encKey}` },
+        { label: "comparisons.csv", path: `/api/admin/export/comparisons.csv?key=${encKey}` },
+        { label: "bt_scores.csv (completed raters)", path: `/api/admin/export/bt_scores_completed.csv?key=${encKey}` },
+        { label: "bt_scores.csv (all)", path: `/api/admin/export/bt_scores_all.csv?key=${encKey}` },
+        { label: "faces.csv", path: `/api/admin/export/faces.csv?key=${encKey}` },
+      ];
+
+      const dlBox = document.getElementById("dl-links");
+      downloads.forEach((d) => {
+        const a = document.createElement("a");
+        a.className = "dl-link";
+        a.href = d.path;
+        a.textContent = d.label;
+        dlBox.appendChild(a);
+      });
+
+      function fillRows(tbodyId, colSpan, emptyMsg, rowArrays) {
+        const tbody = document.getElementById(tbodyId);
+        tbody.replaceChildren();
+        if (!rowArrays.length) {
+          const tr = document.createElement("tr");
+          const td = document.createElement("td");
+          td.colSpan = colSpan;
+          td.textContent = emptyMsg;
+          tr.appendChild(td);
+          tbody.appendChild(tr);
+          return;
+        }
+        rowArrays.forEach((vals) => {
+          const tr = document.createElement("tr");
+          vals.forEach((val) => {
+            const td = document.createElement("td");
+            td.textContent = String(val);
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+      }
+
+      async function loadStats() {
+        const resp = await fetch(`/api/admin/stats?key=${encKey}`);
+        if (!resp.ok) {
+          document.getElementById("progress-line").textContent = "Unauthorized or error loading stats.";
+          return;
+        }
+        const s = await resp.json();
+        document.getElementById("progress-line").textContent =
+          `Progress • 进度: ${s.completed} completed / ${s.started} started (已完成 / 已开始)`;
+        document.getElementById("st-answered").textContent = String(s.answered_comparisons);
+        document.getElementById("st-repeat").textContent =
+          `${s.repeat_agreement.pct}% of ${s.repeat_agreement.total}`;
+        document.getElementById("st-perface").textContent =
+          `${s.comparisons_per_face.min} / ${s.comparisons_per_face.mean} / ${s.comparisons_per_face.max}`;
+        document.getElementById("st-open").textContent = String(s.study_open);
+
+        const af = s.active_faces;
+        document.getElementById("st-faces").textContent =
+          `F-CN: ${af["F-CN"]}, F-ME: ${af["F-ME"]}, M-CN: ${af["M-CN"]}, M-ME: ${af["M-ME"]}`;
+
+        fillRows(
+          "group-body",
+          3,
+          "No participants yet.",
+          (s.groups || []).map((g) => [g.population, g.sex, `${g.completed} / ${g.started}`])
+        );
+
+        fillRows(
+          "participants-body",
+          9,
+          "No participants yet.",
+          (s.participants || []).map((p) => [
+            p.id,
+            p.lang || "-",
+            p.population,
+            p.sex,
+            p.age != null ? p.age : "-",
+            p.residence,
+            `${p.answered} / ${p.total}`,
+            p.completed ? "Completed" : "In progress",
+            `${p.post_confidence} / ${p.post_angle}`,
+          ])
+        );
+
+        fillRows(
+          "bt-body",
+          5,
+          "No comparison ratings yet.",
+          (s.bt_preview || []).map((b) => [
+            b.code,
+            b.face_sex,
+            b.face_population,
+            b.bt_log_strength,
+            `${b.wins} / ${b.comparisons}`,
+          ])
+        );
+      }
+
+      document.getElementById("btn-refresh").addEventListener("click", loadStats);
+      loadStats();
+    })();
+  </script>
+</body>
+</html>

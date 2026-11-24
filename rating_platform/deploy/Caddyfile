@@ -1,0 +1,12 @@
+# Replace study.example.com with your actual domain pointing to the Hong Kong server
+study.example.com {
+    encode gzip zstd
+    reverse_proxy 127.0.0.1:8080
+
+    header {
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "no-referrer"
+    }
+}
+

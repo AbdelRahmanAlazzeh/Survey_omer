@@ -1,0 +1,18 @@
+[Unit]
+Description=Facial Attractiveness Rating Platform (Python stdlib)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/rating_platform
+ExecStart=/usr/bin/python3 /opt/rating_platform/server.py
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+

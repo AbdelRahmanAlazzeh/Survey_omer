@@ -9,8 +9,7 @@ Standard library only. Rules from the spec:
 import itertools
 
 # Populations counted as group A; every other population counts as group B.
-# This mapping is an assumption: confirm it against the final faces.csv values.
-GROUP_A_POPULATIONS = {"han", "chinese", "chinese_other"}
+GROUP_A_POPULATIONS = {"cn", "han", "chinese", "chinese_other"}
 
 
 class NotEnoughFaces(Exception):
@@ -34,16 +33,32 @@ def validate_settings(faces_per_sex, pairs_per_sex, repeat_pairs_per_sex):
 
 def select_faces(rows, per_sex, rng):
     """rows: iterable of (code, population, shown_count) for ONE sex.
-    Returns per_sex codes, half from each group, least-shown first (random tie-break)."""
+    Returns per_sex codes, targeting half from each group, least-shown first (random tie-break).
+    If one group has fewer than per_sex // 2 faces (e.g. 10 vs 12), tops up from the other group."""
     group_a, group_b = [], []
     for code, population, shown in rows:
         (group_a if in_group_a(population) else group_b).append((shown, rng.random(), code))
     half = per_sex // 2
-    if len(group_a) < half or len(group_b) < half:
-        raise NotEnoughFaces(f"need {half} per group, have {len(group_a)} and {len(group_b)}")
+    min_per_group = max(1, per_sex // 4)
+    if len(group_a) < min_per_group or len(group_b) < min_per_group or (len(group_a) + len(group_b)) < per_sex:
+        raise NotEnoughFaces(
+            f"need at least {min_per_group} per group and {per_sex} total, have {len(group_a)} and {len(group_b)}"
+        )
     group_a.sort()
     group_b.sort()
-    return [c for _, _, c in group_a[:half]] + [c for _, _, c in group_b[:half]]
+    take_a = min(len(group_a), half)
+    take_b = min(len(group_b), half)
+    selected_a = group_a[:take_a]
+    selected_b = group_b[:take_b]
+    deficit = per_sex - (take_a + take_b)
+    if deficit > 0:
+        if len(group_a) - take_a >= deficit:
+            selected_a.extend(group_a[take_a:take_a + deficit])
+        else:
+            extra_a = len(group_a) - take_a
+            selected_a.extend(group_a[take_a:])
+            selected_b.extend(group_b[take_b:take_b + (deficit - extra_a)])
+    return [c for _, _, c in selected_a] + [c for _, _, c in selected_b]
 
 
 def _arrange(pairs, rng, tries=200):

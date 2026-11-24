@@ -1,3 +1,4 @@
-rating_platform/data/study.db*
-rating_platform/data/faces.csv
+data/study.db*
+data/faces.csv
+public/faces/
 __pycache__/
